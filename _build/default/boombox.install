@@ -1,0 +1,8 @@
+lib: [
+  "_build/install/default/lib/boombox/META"
+  "_build/install/default/lib/boombox/dune-package"
+  "_build/install/default/lib/boombox/opam"
+]
+bin: [
+  "_build/install/default/bin/boombox"
+]

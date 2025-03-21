@@ -1,0 +1,4 @@
+(library
+ (name boombox)
+ (libraries core)
+)

@@ -1,0 +1,4 @@
+(lang dune 3.17)
+(name boombox)
+(sections (lib .) (bin ../../bin))
+(files (lib (META dune-package opam)) (bin (boombox)))
