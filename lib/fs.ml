@@ -4,3 +4,4 @@ let read_file_as_bytes file_path =
   assert is_flac;
   let _ = Flac.read_metadata_header ic in
   ()
+;;
