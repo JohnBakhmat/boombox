@@ -1,1 +1,1 @@
-val read_file_as_bytes: string -> unit
+val read_file_as_bytes : string -> unit

@@ -1,4 +1,3 @@
 (library
  (name boombox)
- (libraries core)
-)
+ (libraries core))
