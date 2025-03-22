@@ -14,8 +14,9 @@ let streaminfo_block_mask = 0b01111111
 let read_length ic =
   let buf = Bytes.create 3 in
   let* _ = In_channel.really_input ic buf 0 3 in
-  let len = Bytes.get_int16_ne buf 0 in 
-  Some (Int.to_string len)
+  let padded = Bytes.extend buf 1 0 in
+  let len = Bytes.get_int32_be padded 0 in 
+  Some (Int32.to_int len)
 ;;
 
 let read_metadata_header ic =
@@ -27,7 +28,7 @@ let read_metadata_header ic =
   let* len = read_length ic in
 
   Printf.printf "Blockinfo: %0#11d\n" block_info;
-  Printf.printf "Length: %s \n" len;
+  Printf.printf "Length: %x %d \n" len len;
   Printf.printf "Position: %s" (In_channel.pos ic |> Int64.to_string);
   Some ()
 ;;
