@@ -66,19 +66,37 @@ let read_field ic length =
   Some (Bytes.to_string bytes)
 ;;
 
+let split_field field =
+  match String.split_on_char '=' field with
+  | [ name; value ] -> Some (name, value)
+  | _ -> None
+;;
+
 let read_vorbis_comment ic =
   let* vendor_length = read_vendor_length ic in
   let* _vendor_string = read_vendor_string ic vendor_length in
   let* field_count = read_field_count ic in
-  let res =
+  let empty_metadata = Metadata.create () in
+  let open Metadata in
+  let metadata =
     List.init field_count (fun _ ->
       let* field_length = read_field_length ic in
       let* field = read_field ic field_length in
+      (*Printf.printf "%s\n" field;*)
       Some field)
     |> List.filter_map Fun.id
+    |> List.map split_field
+    |> List.filter_map Fun.id
+    |> List.fold_left
+         (fun acc (name, value) ->
+            match name with
+            | "TITLE" -> { acc with title = value }
+            | "ALBUM ARTIST" -> { acc with album_artist = value }
+            | "ALBUM" -> { acc with album = value }
+            | _ -> acc)
+         empty_metadata
   in
-  List.iter (fun field -> Printf.printf "Field: [%s] \n" field) res;
-  Some ()
+  Some metadata
 ;;
 
 let read_file ic =
@@ -87,8 +105,8 @@ let read_file ic =
     let* is_last, block_info, length = read_metadata_header ic in
     match block_info with
     | x when x = vorbis_comment_block ->
-      let* _ = read_vorbis_comment ic in
-      Some ()
+      let* metadata = read_vorbis_comment ic in
+      Some metadata
     | _ ->
       if is_last
       then None
@@ -96,6 +114,5 @@ let read_file ic =
         skip ic (Int64.of_int length);
         loop ())
   in
-  let _ = loop () in
-  Some ()
+  loop ()
 ;;
