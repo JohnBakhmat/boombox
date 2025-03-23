@@ -11,7 +11,7 @@ let pp_metadata x =
     x.title
     x.album
     x.album_artist
-    (String.concat "" x.artists)
+    (String.concat "," x.artists)
 ;;
 
 let create () = { title = ""; album = ""; album_artist = ""; artists = [] }

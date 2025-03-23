@@ -82,7 +82,7 @@ let read_vorbis_comment ic =
     List.init field_count (fun _ ->
       let* field_length = read_field_length ic in
       let* field = read_field ic field_length in
-      (*Printf.printf "%s\n" field;*)
+      Printf.printf "%s\n" field;
       Some field)
     |> List.filter_map Fun.id
     |> List.map split_field
@@ -93,7 +93,7 @@ let read_vorbis_comment ic =
             | "TITLE" -> { acc with title = value }
             | "ALBUM ARTIST" -> { acc with album_artist = value }
             | "ALBUM" -> { acc with album = value }
-            | "ARTIST" -> { acc with artists = acc.artists @ [ value ] }
+            | "ARTISTS" -> { acc with artists = acc.artists @ [ value ] }
             | _ -> acc)
          empty_metadata
   in
