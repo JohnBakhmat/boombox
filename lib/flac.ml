@@ -1,16 +1,27 @@
 let ( let* ) x f = Option.bind x f
 
+let read_bytes ic length =
+  let buf = Bytes.create length in
+  let* _ = In_channel.really_input ic buf 0 length in
+  Some buf
+;;
+
+let skip ic (offset : int64) =
+  let current_pos = In_channel.pos ic in
+  let new_pos = Int64.add current_pos offset in
+  In_channel.seek ic new_pos;
+  ()
+;;
+
 let is_flac ic =
-  let buf = Bytes.create 4 in
-  let success = In_channel.really_input ic buf 0 4 in
-  match success with
-  | Some _ -> Bytes.to_string buf = "fLaC"
+  let bytes = read_bytes ic 4 in
+  match bytes with
+  | Some x -> Bytes.to_string x = "fLaC"
   | None -> false
 ;;
 
 let last_block_mask = 0b10000000
 let streaminfo_block_mask = 0b01111111
-
 let vorbis_comment_block = 0b0000100
 
 let read_length ic =
@@ -21,7 +32,6 @@ let read_length ic =
   Some (Int32.to_int len)
 ;;
 
-
 let read_metadata_header ic =
   let* block_info = In_channel.input_byte ic in
   let is_last = block_info land last_block_mask = 0b10000000 in
@@ -30,47 +40,63 @@ let read_metadata_header ic =
   Some (is_last, stream_info, length)
 ;;
 
-let read_vorbis_comment (ic:in_channel) (length:int) = 
-        let buf = Bytes.create length in
-        let* _ = In_channel.really_input ic buf 0 length in
-        let str = Bytes.to_string buf in
-        Printf.printf "vorbis: [%s]" str;
-
-        Some ()
+let read_vendor_length ic =
+  let* bytes = read_bytes ic 4 in
+  let vendor_length = Bytes.get_int32_le bytes 0 |> Int32.to_int in
+  Some vendor_length
 ;;
 
-let skip ic (offset:int64) =
-        let current_pos = In_channel.pos ic in 
-        let new_pos = Int64.add current_pos offset in 
-        In_channel.seek ic new_pos;
-        ()
-;;
-let read_file ic = 
-        assert (is_flac ic);
-
-        let rec loop () = 
-                let header = read_metadata_header ic in
-                match header with
-                | Some (is_last, block_info, length) ->
-                                (match block_info with
-                                | x when x = vorbis_comment_block -> 
-                                                Printf.printf "%s\n" (Int64.to_string (In_channel.pos ic));
-                                                skip ic (Int64.of_int 4);
-                                                skip ic (Int64.of_int 32);
-                                                let _foo = read_vorbis_comment ic 72 in 
-
-                                                ()
-                                | _ -> if is_last 
-                                then () 
-                                else 
-                                        skip ic (Int64.of_int length);
-                                        loop()
-                                );
-                | None -> ()
-        in
-
-        loop();
-        Some ()
+let read_vendor_string ic length =
+  let* bytes = read_bytes ic length in
+  Some (Bytes.to_string bytes)
 ;;
 
+let read_field_count ic = 
+        let* bytes = read_bytes ic 4 in 
+        Some (Bytes.get_int32_le bytes 0 |> Int32.to_int)
+;;
 
+let read_field_length ic =
+        let* bytes = read_bytes ic 4 in 
+        Some (Bytes.get_int32_le bytes 0 |> Int32.to_int)
+
+let read_field ic length = 
+        let* bytes = read_bytes ic length in 
+        Some (Bytes.to_string bytes)
+
+
+
+let read_vorbis_comment ic =
+  let* vendor_length = read_vendor_length ic in
+  let* _vendor_string = read_vendor_string ic vendor_length in
+  let* field_count = read_field_count ic in
+
+
+  let res = List.init field_count (fun _ -> 
+                          let* field_length = read_field_length ic in
+                          let* field = read_field ic field_length in 
+                          Some field
+  ) |> List.filter_map Fun.id in 
+  List.iter (fun field -> Printf.printf "Field: [%s] \n" field) res;
+
+  Some ()
+;;
+
+let read_file ic =
+  assert (is_flac ic);
+  let rec loop () =
+    let* is_last, block_info, length = read_metadata_header ic in
+    match block_info with
+    | x when x = vorbis_comment_block ->
+      let* _ = read_vorbis_comment ic in
+      Some ()
+    | _ ->
+      if is_last
+      then None
+      else (
+        skip ic (Int64.of_int length);
+        loop ())
+  in
+  let _ = loop () in
+  Some ()
+;;
