@@ -93,6 +93,7 @@ let read_vorbis_comment ic =
             | "TITLE" -> { acc with title = value }
             | "ALBUM ARTIST" -> { acc with album_artist = value }
             | "ALBUM" -> { acc with album = value }
+            | "ARTIST" -> { acc with artists = acc.artists @ [ value ] }
             | _ -> acc)
          empty_metadata
   in
