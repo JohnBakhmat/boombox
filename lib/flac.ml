@@ -51,34 +51,33 @@ let read_vendor_string ic length =
   Some (Bytes.to_string bytes)
 ;;
 
-let read_field_count ic = 
-        let* bytes = read_bytes ic 4 in 
-        Some (Bytes.get_int32_le bytes 0 |> Int32.to_int)
+let read_field_count ic =
+  let* bytes = read_bytes ic 4 in
+  Some (Bytes.get_int32_le bytes 0 |> Int32.to_int)
 ;;
 
 let read_field_length ic =
-        let* bytes = read_bytes ic 4 in 
-        Some (Bytes.get_int32_le bytes 0 |> Int32.to_int)
+  let* bytes = read_bytes ic 4 in
+  Some (Bytes.get_int32_le bytes 0 |> Int32.to_int)
+;;
 
-let read_field ic length = 
-        let* bytes = read_bytes ic length in 
-        Some (Bytes.to_string bytes)
-
-
+let read_field ic length =
+  let* bytes = read_bytes ic length in
+  Some (Bytes.to_string bytes)
+;;
 
 let read_vorbis_comment ic =
   let* vendor_length = read_vendor_length ic in
   let* _vendor_string = read_vendor_string ic vendor_length in
   let* field_count = read_field_count ic in
-
-
-  let res = List.init field_count (fun _ -> 
-                          let* field_length = read_field_length ic in
-                          let* field = read_field ic field_length in 
-                          Some field
-  ) |> List.filter_map Fun.id in 
+  let res =
+    List.init field_count (fun _ ->
+      let* field_length = read_field_length ic in
+      let* field = read_field ic field_length in
+      Some field)
+    |> List.filter_map Fun.id
+  in
   List.iter (fun field -> Printf.printf "Field: [%s] \n" field) res;
-
   Some ()
 ;;
 
