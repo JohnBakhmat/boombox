@@ -3,10 +3,10 @@ open Fs
 let ( let* ) x f = Option.bind x f
 
 let is_flac ic =
-  let bytes = read_bytes ic 4 in
-  match bytes with
-  | Some x -> Bytes.to_string x = "fLaC"
-  | None -> false
+  read_bytes ic 4
+  |> Option.map Bytes.to_string
+  |> Option.map (fun s -> s = "fLaC")
+  |> Option.value ~default:false
 ;;
 
 let last_block_mask = 0b10000000
