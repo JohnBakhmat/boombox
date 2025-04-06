@@ -1,3 +1,5 @@
 (library
  (name boombox)
- (libraries core))
+ (libraries core ppx_deriving)
+ (preprocess (pps ppx_deriving.show ppx_deriving.ord))
+)

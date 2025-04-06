@@ -1,17 +1,12 @@
-type t =
+type metadata =
   { title : string
   ; album_artist : string
   ; album : string
   ; artists : string list
   }
+[@@deriving show]
 
-let pp_metadata x =
-  Printf.printf
-    "{\n\t title: %s\n\t album: %s\n\t album_artist: %s\n\t artists: %s\n}"
-    x.title
-    x.album
-    x.album_artist
-    (String.concat "," x.artists)
-;;
+type t = metadata
 
+let pp_metadata x = Printf.printf "%s" (show_metadata x)
 let create () = { title = ""; album = ""; album_artist = ""; artists = [] }

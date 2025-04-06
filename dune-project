@@ -19,7 +19,7 @@
  (name boombox)
  (synopsis "A short synopsis")
  (description "A longer description")
- (depends ocaml)
+ (depends ocaml core ppx_deriving)
  (tags
   ("add topics" "to describe" your project)))
 
