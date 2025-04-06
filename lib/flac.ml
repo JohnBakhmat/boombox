@@ -1,17 +1,6 @@
+open Fs
+
 let ( let* ) x f = Option.bind x f
-
-let read_bytes ic length =
-  let buf = Bytes.create length in
-  let* _ = In_channel.really_input ic buf 0 length in
-  Some buf
-;;
-
-let skip ic (offset : int64) =
-  let current_pos = In_channel.pos ic in
-  let new_pos = Int64.add current_pos offset in
-  In_channel.seek ic new_pos;
-  ()
-;;
 
 let is_flac ic =
   let bytes = read_bytes ic 4 in
@@ -40,22 +29,10 @@ let read_metadata_header ic =
   Some (is_last, stream_info, length)
 ;;
 
-let read_vendor_length ic =
-  let* bytes = read_bytes ic 4 in
-  let vendor_length = Bytes.get_int32_le bytes 0 |> Int32.to_int in
-  Some vendor_length
-;;
-
+let read_vendor_length ic = read_int32 ic
 let read_vendor_string ic length = read_bytes ic length |> Option.map Bytes.to_string
-
-let read_field_count ic =
-  read_bytes ic 4 |> Option.map (fun x -> Bytes.get_int32_le x 0 |> Int32.to_int)
-;;
-
-let read_field_length ic =
-  read_bytes ic 4 |> Option.map (fun x -> Bytes.get_int32_le x 0 |> Int32.to_int)
-;;
-
+let read_field_count ic = read_int32 ic
+let read_field_length ic = read_int32 ic
 let read_field ic length = read_bytes ic length |> Option.map Bytes.to_string
 
 let split_field field =
@@ -83,7 +60,7 @@ let read_vorbis_comment ic =
          (fun acc (name, value) ->
             match name with
             | "TITLE" -> { acc with title = value }
-            | "ALBUM ARTIST" -> { acc with album_artist = value }
+            | "ALBUMARTIST" -> { acc with album_artist = value }
             | "ALBUM" -> { acc with album = value }
             | "ARTISTS" -> { acc with artists = acc.artists @ [ value ] }
             | _ -> acc)
