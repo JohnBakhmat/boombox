@@ -17,9 +17,7 @@ let read_dir path =
     |> List.map (fun file -> path ^ "/" ^ file)
   in
   let parsed_files = files |> List.map In_channel.open_bin |> List.map Flac.read_file in
-  parsed_files
-  |> List.filter_map (fun x -> x)
-  |> List.iter (fun x -> Metadata.pp_metadata x);
+  parsed_files |> List.filter_map Fun.id |> List.iter (fun x -> Metadata.pp_metadata x);
   ()
 ;;
 
@@ -28,7 +26,6 @@ let main () =
   (match is_dir path with
    | true -> read_dir path
    | false -> ());
-  Printf.printf "%b %s" (is_dir path) path;
   Some ()
 ;;
 
