@@ -1,24 +1,35 @@
 open Boombox
 
-let ( let* ) x f = Option.bind x f
-
-let get_filepath () =
+let get_path () =
   let argv1 = Sys.argv.(1) in
   let cwd = Sys.getcwd () in
   let absolute_path = Core.Filename.to_absolute_exn argv1 ~relative_to:cwd in
   absolute_path
 ;;
 
+let is_dir path = Sys.is_directory path
+
+let read_dir path =
+  let files =
+    Sys.readdir path
+    |> Array.to_list
+    |> List.filter (fun file -> String.ends_with ~suffix:".flac" file)
+    |> List.map (fun file -> path ^ "/" ^ file)
+  in
+  let parsed_files = files |> List.map In_channel.open_bin |> List.map Flac.read_file in
+  parsed_files
+  |> List.filter_map (fun x -> x)
+  |> List.iter (fun x -> Metadata.pp_metadata x);
+  ()
+;;
+
 let main () =
-  let filepath = get_filepath () in
-  let ic = In_channel.open_bin filepath in
-  let* metadata = Flac.read_file ic in
-  Metadata.pp_metadata metadata;
+  let path = get_path () in
+  (match is_dir path with
+   | true -> read_dir path
+   | false -> ());
+  Printf.printf "%b %s" (is_dir path) path;
   Some ()
 ;;
 
-let () =
-  match main () with
-  | Some _ -> ()
-  | None -> ()
-;;
+let () = main () |> Option.value ~default:()
