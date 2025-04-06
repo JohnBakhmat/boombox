@@ -1,6 +1,5 @@
+open Util
 open Fs
-
-let ( let* ) x f = Option.bind x f
 
 let is_flac ic =
   read_bytes ic 4

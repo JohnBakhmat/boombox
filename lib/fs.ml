@@ -1,4 +1,4 @@
-let ( let* ) x f = Option.bind x f
+open Util
 
 let read_bytes ic length =
   let buf = Bytes.create length in
