@@ -46,25 +46,17 @@ let read_vendor_length ic =
   Some vendor_length
 ;;
 
-let read_vendor_string ic length =
-  let* bytes = read_bytes ic length in
-  Some (Bytes.to_string bytes)
-;;
+let read_vendor_string ic length = read_bytes ic length |> Option.map Bytes.to_string
 
 let read_field_count ic =
-  let* bytes = read_bytes ic 4 in
-  Some (Bytes.get_int32_le bytes 0 |> Int32.to_int)
+  read_bytes ic 4 |> Option.map (fun x -> Bytes.get_int32_le x 0 |> Int32.to_int)
 ;;
 
 let read_field_length ic =
-  let* bytes = read_bytes ic 4 in
-  Some (Bytes.get_int32_le bytes 0 |> Int32.to_int)
+  read_bytes ic 4 |> Option.map (fun x -> Bytes.get_int32_le x 0 |> Int32.to_int)
 ;;
 
-let read_field ic length =
-  let* bytes = read_bytes ic length in
-  Some (Bytes.to_string bytes)
-;;
+let read_field ic length = read_bytes ic length |> Option.map Bytes.to_string
 
 let split_field field =
   match String.split_on_char '=' field with
