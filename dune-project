@@ -19,7 +19,7 @@
  (name boombox)
  (synopsis "A short synopsis")
  (description "A longer description")
- (depends ocaml core ppx_deriving)
+ (depends ocaml core ppx_deriving fun-sqlite)
  (tags
   ("add topics" "to describe" your project)))
 

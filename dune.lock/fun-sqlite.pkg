@@ -1,0 +1,17 @@
+(version 0.2.3)
+
+(build
+ (progn
+  (when
+   %{pkg-self:dev}
+   (run dune subst))
+  (run dune build -p %{pkg-self:name} -j %{jobs} @install)))
+
+(depends dune fun-sql sqlite3)
+
+(source
+ (fetch
+  (url
+   https://github.com/yawaramin/fun-sql/releases/download/v0.2.3/fun-sql-0.2.3.tbz)
+  (checksum
+   sha256=9403585482c0327877d89a0640f7f8163ae708d2b8031d4d39e067d744bb7528)))

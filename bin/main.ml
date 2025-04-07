@@ -22,6 +22,7 @@ let read_dir path =
 ;;
 
 let main () =
+  Boombox.Db.init_db ();
   let path = get_path () in
   (match is_dir path with
    | true -> read_dir path

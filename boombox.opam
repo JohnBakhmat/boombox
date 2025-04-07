@@ -14,6 +14,7 @@ depends: [
   "ocaml"
   "core"
   "ppx_deriving"
+  "fun-sqlite"
   "odoc" {with-doc}
 ]
 build: [
