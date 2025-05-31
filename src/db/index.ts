@@ -16,7 +16,7 @@ import { Env } from "../env"
 //}))
 
 
-const SqlLive = SqliteClient.layer({
+export const SqlLive = SqliteClient.layer({
 	filename: process.env.DB_URL!
 })
 
