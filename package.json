@@ -2,8 +2,8 @@
   "name": "boombox",
   "module": "src/index.ts",
   "type": "module",
-  "scripts":{
-    "dev":"bun run ./src/index.ts"
+  "scripts": {
+    "dev": "bun run ./src/index.ts"
   },
   "devDependencies": {
     "@effect/vitest": "^0.23.2",
@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@effect/platform-bun": "^0.67.3",
+    "@effect/sql-drizzle": "^0.36.3",
     "@effect/sql-sqlite-bun": "^0.38.3",
     "drizzle-orm": "^0.44.1",
     "effect": "^3.16.2",
