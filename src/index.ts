@@ -4,19 +4,12 @@ import { BunContext, BunRuntime } from "@effect/platform-bun";
 import { SqliteDrizzle } from "@effect/sql-drizzle/Sqlite";
 import { songTable } from "./db/schema";
 import { DatabaseLive } from "./db";
+import { readVorbisComment } from "./flac";
 
 const main = Effect.gen(function* () {
+	yield* readVorbisComment("./test-data/11 - Tropical Fish.flac");
+});
 
-	const db = yield* SqliteDrizzle;
+const layers = Layer.mergeAll(BunContext.layer, EnvLive, DatabaseLive);
 
-	const data = yield* Effect.promise(() => db.select().from(songTable).execute())
-
-	yield* Console.log(data)
-
-})
-
-
-const layers = Layer.mergeAll(BunContext.layer, EnvLive, DatabaseLive)
-
-BunRuntime.runMain(main.pipe(Effect.provide(layers)))
-
+BunRuntime.runMain(main.pipe(Effect.provide(layers)));
