@@ -1,0 +1,21 @@
+{
+  "name": "boombox",
+  "module": "src/index.ts",
+  "type": "module",
+  "devDependencies": {
+    "@effect/vitest": "^0.23.2",
+    "@types/bun": "^1.2.15",
+    "drizzle-kit": "^0.31.1",
+    "vitest": "^3.1.4"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@effect/platform-bun": "^0.67.3",
+    "@effect/sql-sqlite-bun": "^0.38.3",
+    "drizzle-orm": "^0.44.1",
+    "effect": "^3.16.2",
+    "zod": "^3.25.0-beta.20250519T094321"
+  }
+}
