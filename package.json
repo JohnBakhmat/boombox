@@ -6,7 +6,7 @@
 		"dev": "bun run ./src/index.ts",
 		"db:migrate": "bun run ./src/db/migrate.ts",
 		"db:gen": "drizzle-kit generate",
-		"test": "vitest"
+		"test": "vitest run"
 	},
 	"devDependencies": {
 		"@effect/vitest": "^0.23.2",
