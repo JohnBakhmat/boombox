@@ -24,7 +24,7 @@ export const readMetadata = (path: string) =>
 
 		const fileIsFlac = yield* isFlac(path);
 		if (!fileIsFlac) {
-			yield* Effect.fail(
+			return yield* Effect.fail(
 				new FlacError({
 					message: "The file you are trying to parse as FLAC is NOT FLAC",
 				}),
