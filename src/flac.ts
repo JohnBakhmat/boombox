@@ -4,19 +4,9 @@ import { FileSystem } from "@effect/platform";
 export const isFlac = (path: string) =>
 	Effect.gen(function* () {
 		const fs = yield* FileSystem.FileSystem;
-
-		const fileStream = yield* pipe(
-			fs.stream(path, {
-				bufferSize: 4,
-				chunkSize: 4,
-			}),
-			Stream.map((x) => x.toString()),
-			Stream.run(Sink.take(1)),
-		);
-
-		const magicBytes = Chunk.make("fLaC");
-
-		return Equal.equals(fileStream, magicBytes);
+		const file = yield* fs.readFile(path);
+		const slice = new TextDecoder().decode(file.slice(0, 4));
+		return slice === "fLaC";
 	});
 
 export const readVorbisComment = (path: string) =>
