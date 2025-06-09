@@ -36,25 +36,6 @@ export const readMetadata = (path: string) =>
 
 		const file = yield* fs.readFile(path);
 
-		function readHeader(file: Uint8Array, offset: number) {
-			return Effect.gen(function* () {
-				const slice = file.slice(offset, offset + 4);
-
-				const header = yield* Schema.decode(FlacHeaderFromUint8Array)({
-					uint8Array: file,
-					offset: offset,
-				});
-
-				yield* Console.dir({
-					header,
-					offset,
-					slice,
-				});
-
-				return header;
-			});
-		}
-
 		let offset = 4;
 		let header = yield* readHeader(file, offset);
 		offset = offset + 4 + header.length;
@@ -69,6 +50,19 @@ export const readMetadata = (path: string) =>
 			offset,
 		});
 	});
+
+function readHeader(file: Uint8Array, offset: number) {
+	return Effect.gen(function* () {
+		const slice = file.slice(offset, offset + 4);
+
+		const header = yield* Schema.decode(FlacHeaderFromUint8Array)({
+			uint8Array: file,
+			offset: offset,
+		});
+
+		return header;
+	});
+}
 
 const VORBIS_STREAMINFO = 4;
 
@@ -95,10 +89,6 @@ const FlacHeaderFromUint8Array = Schema.transformOrFail(
 				}
 
 				const dataView = new DataView(uint8Array.buffer, offset);
-
-				yield* Console.dir({
-					dataView: dataView,
-				});
 
 				const header = {
 					isLast: ((dataView.getUint8(0) & 0x80) === 0x80 ? 1 : 0) as Bit, // 1 bit
