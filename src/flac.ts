@@ -11,6 +11,7 @@ import {
 	Stream,
 } from "effect";
 import { FileSystem } from "@effect/platform";
+import { Bit, Int32, Uint8 } from "./utils";
 
 export const isFlac = (path: string) =>
 	Effect.gen(function* () {
@@ -72,9 +73,9 @@ export const readMetadata = (path: string) =>
 const VORBIS_STREAMINFO = 4;
 
 const FlacHeader = Schema.Struct({
-	isLast: Schema.Boolean, // 1 bit
-	streamInfo: Schema.Number, // 7 bits
-	length: Schema.Number, // 3 bytes
+	isLast: Bit, // 1 bit
+	streamInfo: Uint8, // 7 bits
+	length: Int32, // 3 bytes
 });
 
 const FlacHeaderFromUint8Array = Schema.transformOrFail(
@@ -100,7 +101,7 @@ const FlacHeaderFromUint8Array = Schema.transformOrFail(
 				});
 
 				const header = {
-					isLast: (dataView.getUint8(0) & 0x80) === 0x80, // 1 bit
+					isLast: ((dataView.getUint8(0) & 0x80) === 0x80 ? 1 : 0) as Bit, // 1 bit
 					streamInfo: dataView.getUint8(0) & 0x7f, // 7 bits
 					length: dataView.getUint32(1, false) >> 8, // 3 bytes
 				};
