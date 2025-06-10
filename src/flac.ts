@@ -105,10 +105,10 @@ const VorbisCommentFromUint8Array = Schema.transformOrFail(
 				let offset = 0;
 
 				const vendorStringLength = dv.getUint32(offset, true);
-				offset +=4
+				offset += 4;
 
 				const vendorString = uint8Array
-					.slice(offset, offset+vendorStringLength)
+					.slice(offset, offset + vendorStringLength)
 					.toString();
 				offset += vendorStringLength;
 
@@ -121,47 +121,49 @@ const VorbisCommentFromUint8Array = Schema.transformOrFail(
 					numberOfFields,
 				});
 
-				const metadata:Partial<Metadata> = {}
+				const metadata: Partial<Metadata> = {};
 
 				for (let i = 0; i < numberOfFields; i++) {
 					const fieldLength = dv.getUint32(offset, true);
 					offset += 4;
 
-					const fieldValue = uint8Array.slice(offset, offset+fieldLength).toString();
+					const fieldValue = uint8Array
+						.slice(offset, offset + fieldLength)
+						.toString();
 					offset += fieldLength;
 
-					const parsedField = parseFieldValue(fieldValue)
+					const parsedField = parseFieldValue(fieldValue);
 
-					if (!parsedField){continue}
+					if (!parsedField) {
+						continue;
+					}
 
-					const {key,value} =parsedField;
+					const { key, value } = parsedField;
 
 					yield* Console.log({
 						offset,
 						fieldLength,
 						fieldValue,
 						key,
-						value
+						value,
 					});
 
-
-					switch(key){
+					switch (key) {
 						case "ALBUM":
-							metadata.album = value
+							metadata.album = value;
 							break;
 						case "ARTIST":
-							metadata.artist = value
+							metadata.artist = value;
 							break;
 						case "TITLE":
-							metadata.title = value
+							metadata.title = value;
 							break;
 						default:
-							continue
+							continue;
 					}
-
 				}
 
-				yield* Console.log(metadata)
+				yield* Console.log(metadata);
 
 				const vorbisComment = {
 					vendorStringLength,
@@ -181,18 +183,17 @@ const VorbisCommentFromUint8Array = Schema.transformOrFail(
 	},
 );
 
-function parseFieldValue(str:string):{key:string, value:string} | null{
-	const [key,value] = str.split('=').map(x=>x.trim())
+function parseFieldValue(str: string): { key: string; value: string } | null {
+	const [key, value] = str.split("=").map((x) => x.trim());
 	if (!key || !value) return null;
-	return {key,value}
-
+	return { key, value };
 }
 
 type Metadata = {
-	album: string
-	artist: string
-	title: string
-}
+	album: string;
+	artist: string;
+	title: string;
+};
 
 const VORBIS_STREAMINFO = 4;
 
