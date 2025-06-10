@@ -8,14 +8,12 @@ import { Database } from "bun:sqlite";
 import { Env, EnvLive } from "../env";
 
 const main = Effect.gen(function* () {
-	const env = yield* Env.pipe(Effect.flatMap(x => x.getEnv))
+	const env = yield* Env.pipe(Effect.flatMap((x) => x.getEnv));
 
 	const db = drizzle(new Database(env.DB_URL));
 
-	yield* Effect.try(() =>
-		migrate(db, { migrationsFolder: "./drizzle" })
-	);
-})
+	yield* Effect.try(() => migrate(db, { migrationsFolder: "./drizzle" }));
+});
 
-const layers = Layer.mergeAll(BunContext.layer, SqlLive, EnvLive)
-BunRuntime.runMain(main.pipe(Effect.provide(layers)))
+const layers = Layer.mergeAll(BunContext.layer, SqlLive, EnvLive);
+BunRuntime.runMain(main.pipe(Effect.provide(layers)));

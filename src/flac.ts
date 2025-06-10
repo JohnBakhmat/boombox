@@ -12,6 +12,7 @@ import {
 } from "effect";
 import { FileSystem } from "@effect/platform";
 import { Bit, Int32, Uint8 } from "./utils";
+import { uint8Array } from "@effect/platform/HttpServerResponse";
 
 export const isFlac = (path: string) =>
 	Effect.gen(function* () {
@@ -51,6 +52,10 @@ export const readMetadata = (path: string) =>
 		});
 	});
 
+function readVorbisComment(file: Uint8Array, offset: number) {
+	return Effect.gen(function* () {});
+}
+
 function readHeader(file: Uint8Array, offset: number) {
 	return Effect.gen(function* () {
 		const slice = file.slice(offset, offset + 4);
@@ -63,6 +68,34 @@ function readHeader(file: Uint8Array, offset: number) {
 		return header;
 	});
 }
+
+const VorbisComment = Schema.Struct({
+	vendorStringLength: Int32,
+	vendorString: Schema.String,
+	numberOfFields: Int32,
+});
+
+const VorbisCommentFromUint8Array = Schema.transformOrFail(
+	Schema.Struct({
+		uint8Array: Schema.Uint8ArrayFromSelf,
+		offset: Schema.Number,
+		length: Schema.Number,
+	}),
+	VorbisComment,
+	{
+		strict: true,
+		decode({ uint8Array, offset, length }, _, ast) {
+			const dv = new DataView(uint8Array.buffer, offset, length);
+		},
+		encode(x, _, ast) {
+			const arrayBuffer = new ArrayBuffer(64);
+			const dv = new DataView(arrayBuffer);
+			dv.setInt32(0, x.vendorStringLength);
+
+			return ParseResult.fail(new ParseResult.Type(ast, x, "Unimplemented"));
+		},
+	},
+);
 
 const VORBIS_STREAMINFO = 4;
 
@@ -88,12 +121,12 @@ const FlacHeaderFromUint8Array = Schema.transformOrFail(
 					);
 				}
 
-				const dataView = new DataView(uint8Array.buffer, offset);
+				const dataView = new DataView(uint8Array.buffer, offset, 4);
 
 				const header = {
 					isLast: ((dataView.getUint8(0) & 0x80) === 0x80 ? 1 : 0) as Bit, // 1 bit
 					streamInfo: dataView.getUint8(0) & 0x7f, // 7 bits
-					length: dataView.getUint32(1, false) >> 8, // 3 bytes
+					length: dataView.getUint32(0, false) & 0xffffff, // 3 byte
 				};
 
 				return yield* ParseResult.succeed(header);

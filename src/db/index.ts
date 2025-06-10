@@ -1,10 +1,9 @@
-import { SqliteClient } from "@effect/sql-sqlite-bun"
-import { SqlClient } from "@effect/sql"
+import { SqliteClient } from "@effect/sql-sqlite-bun";
+import { SqlClient } from "@effect/sql";
 
-import * as SqliteDrizzle from "@effect/sql-drizzle/Sqlite"
-import { Effect, Layer } from "effect"
-import { Env } from "../env"
-
+import * as SqliteDrizzle from "@effect/sql-drizzle/Sqlite";
+import { Effect, Layer } from "effect";
+import { Env } from "../env";
 
 //const SqlLive = Layer.scoped(SqliteClient.SqliteClient, Effect.gen(function* () {
 
@@ -15,12 +14,9 @@ import { Env } from "../env"
 //})
 //}))
 
-
 export const SqlLive = SqliteClient.layer({
-	filename: process.env.DB_URL!
-})
+	filename: process.env.DB_URL!,
+});
 
-const DrizzleLive = SqliteDrizzle.layer.pipe(
-	Layer.provide(SqlLive)
-)
-export const DatabaseLive = Layer.mergeAll(SqlLive, DrizzleLive)
+const DrizzleLive = SqliteDrizzle.layer.pipe(Layer.provide(SqlLive));
+export const DatabaseLive = Layer.mergeAll(SqlLive, DrizzleLive);
