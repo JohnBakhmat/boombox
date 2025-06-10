@@ -39,21 +39,35 @@ export const readMetadata = (path: string) =>
 
 		let offset = 4;
 		let header = yield* readHeader(file, offset);
-		offset = offset + 4 + header.length;
 
 		while (!header.isLast && header.streamInfo !== VORBIS_STREAMINFO) {
-			header = yield* readHeader(file, offset);
 			offset = offset + 4 + header.length;
+			header = yield* readHeader(file, offset);
 		}
+
+		offset += 4;
 
 		yield* Console.log({
 			header,
 			offset,
 		});
+
+		yield* readVorbisComment(file, offset, header.length);
 	});
 
-function readVorbisComment(file: Uint8Array, offset: number) {
-	return Effect.gen(function* () {});
+function readVorbisComment(file: Uint8Array, offset: number, length: number) {
+	return Effect.gen(function* () {
+		const slice = file.slice(offset, offset + length);
+		yield* Console.log(slice);
+
+		const vorbisComment = yield* Schema.decode(VorbisCommentFromUint8Array)({
+			uint8Array: slice,
+			offset,
+			length,
+		});
+
+		return vorbisComment;
+	});
 }
 
 function readHeader(file: Uint8Array, offset: number) {
@@ -84,8 +98,78 @@ const VorbisCommentFromUint8Array = Schema.transformOrFail(
 	VorbisComment,
 	{
 		strict: true,
-		decode({ uint8Array, offset, length }, _, ast) {
-			const dv = new DataView(uint8Array.buffer, offset, length);
+		decode({ uint8Array, offset: globalOffset, length }, _, ast) {
+			return Effect.gen(function* () {
+				const dv = new DataView(uint8Array.buffer, globalOffset, length);
+
+				let offset = 0;
+
+				const vendorStringLength = dv.getUint32(offset, true);
+				offset +=4
+
+				const vendorString = uint8Array
+					.slice(offset, offset+vendorStringLength)
+					.toString();
+				offset += vendorStringLength;
+
+				const numberOfFields = dv.getUint32(offset, true);
+				offset += 4;
+
+				yield* Console.log({
+					vendorStringLength,
+					vendorString: vendorString,
+					numberOfFields,
+				});
+
+				const metadata:Partial<Metadata> = {}
+
+				for (let i = 0; i < numberOfFields; i++) {
+					const fieldLength = dv.getUint32(offset, true);
+					offset += 4;
+
+					const fieldValue = uint8Array.slice(offset, offset+fieldLength).toString();
+					offset += fieldLength;
+
+					const parsedField = parseFieldValue(fieldValue)
+
+					if (!parsedField){continue}
+
+					const {key,value} =parsedField;
+
+					yield* Console.log({
+						offset,
+						fieldLength,
+						fieldValue,
+						key,
+						value
+					});
+
+
+					switch(key){
+						case "ALBUM":
+							metadata.album = value
+							break;
+						case "ARTIST":
+							metadata.artist = value
+							break;
+						case "TITLE":
+							metadata.title = value
+							break;
+						default:
+							continue
+					}
+
+				}
+
+				yield* Console.log(metadata)
+
+				const vorbisComment = {
+					vendorStringLength,
+					vendorString,
+					numberOfFields,
+				};
+				return yield* ParseResult.succeed(vorbisComment);
+			});
 		},
 		encode(x, _, ast) {
 			const arrayBuffer = new ArrayBuffer(64);
@@ -96,6 +180,19 @@ const VorbisCommentFromUint8Array = Schema.transformOrFail(
 		},
 	},
 );
+
+function parseFieldValue(str:string):{key:string, value:string} | null{
+	const [key,value] = str.split('=').map(x=>x.trim())
+	if (!key || !value) return null;
+	return {key,value}
+
+}
+
+type Metadata = {
+	album: string
+	artist: string
+	title: string
+}
 
 const VORBIS_STREAMINFO = 4;
 
