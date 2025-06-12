@@ -6,7 +6,7 @@ import { BunContext, BunRuntime } from "@effect/platform-bun/index";
 const provide = Effect.provide(BunContext.layer);
 
 test.effect("isFlac should return weather file is flac", () =>
-	Effect.gen(function* () {
+	Effect.gen(function*() {
 		const inputFlac = "./test-data/11 - Tropical Fish.flac";
 		const actualFlac = yield* isFlac(inputFlac);
 		expect(actualFlac).toBeTruthy();
@@ -18,7 +18,7 @@ test.effect("isFlac should return weather file is flac", () =>
 );
 
 test.effect("readMetadata should return error if file is not flac", () =>
-	Effect.gen(function* () {
+	Effect.gen(function*() {
 		const inputNonFlac = "./test-data/01 - hover.mp3";
 		const actualNonFlac = yield* readMetadata(inputNonFlac).pipe(
 			Effect.as(true),
@@ -30,7 +30,7 @@ test.effect("readMetadata should return error if file is not flac", () =>
 );
 
 test.effect("readMetadata should NOT error if file is FLAC", () =>
-	Effect.gen(function* () {
+	Effect.gen(function*() {
 		const input = "./test-data/11 - Tropical Fish.flac";
 		const actual = yield* readMetadata(input).pipe(
 			Effect.as(true),
@@ -38,5 +38,18 @@ test.effect("readMetadata should NOT error if file is FLAC", () =>
 		);
 
 		expect(actual).toBe(true);
+	}).pipe(provide),
+);
+
+
+test.effect("readMetadata should return album, artist and title", () =>
+	Effect.gen(function*() {
+		const input = "./test-data/11 - Tropical Fish.flac";
+		const actual = yield* readMetadata(input)
+		expect(actual).toEqual({
+			artist: '濱田金吾',
+			album: '「midnight cruisin’」+「MUGSHOT」',
+			title: 'TROPICAL FISH'
+		});
 	}).pipe(provide),
 );
