@@ -10,7 +10,9 @@ test.effect("parseFile should parse flac just fine", () =>
 	Effect.gen(function* () {
 		const input = "./test-data/11 - Tropical Fish.flac";
 		const actual = yield* parseFile(input);
-		expect(actual).toMatchSnapshot();
+		expect(actual).toHaveProperty("artist", "濱田金吾");
+		expect(actual).toHaveProperty("album", "「midnight cruisin’」+「MUGSHOT」");
+		expect(actual).toHaveProperty("title", "TROPICAL FISH");
 	}).pipe(provide),
 );
 

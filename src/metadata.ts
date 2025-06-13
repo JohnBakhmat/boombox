@@ -4,6 +4,9 @@ export const MetadataSchema = Schema.Struct({
 	album: Schema.NonEmptyString,
 	artist: Schema.NonEmptyString,
 	title: Schema.NonEmptyString,
+	trackNumber: Schema.optional(Schema.Number),
 });
 
-export type Metadata = Schema.Schema.Type<typeof MetadataSchema>;
+const mutableMetadataSchema = Schema.mutable(MetadataSchema);
+
+export type Metadata = Schema.Schema.Type<typeof mutableMetadataSchema>;

@@ -114,6 +114,9 @@ const MetadataFromUint8Array = Schema.transformOrFail(
 						case "TITLE":
 							metadata.title = value;
 							break;
+						case "TRACKNUMBER":
+							metadata.trackNumber = Number.parseInt(value);
+							break;
 						default:
 							continue;
 					}
