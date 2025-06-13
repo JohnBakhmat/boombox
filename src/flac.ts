@@ -15,48 +15,7 @@ import { Bit, Int32, Uint8 } from "./utils";
 import { uint8Array } from "@effect/platform/HttpServerResponse";
 import { z } from "zod";
 
-export function isFlac(path: string) {
-	return Effect.gen(function* () {
-		const fs = yield* FileSystem.FileSystem;
-		const file = yield* fs.readFile(path);
-		const slice = file.slice(0, 4).toString();
-		return slice === "fLaC";
-	});
-}
-
-export function readMetadata(path: string) {
-	return Effect.gen(function* () {
-		const fs = yield* FileSystem.FileSystem;
-
-		const fileIsFlac = yield* isFlac(path);
-		if (!fileIsFlac) {
-			return yield* Effect.fail(
-				new FlacError({
-					message: "The file you are trying to parse as FLAC is NOT FLAC",
-				}),
-			);
-		}
-
-		const file = yield* fs.readFile(path);
-
-		let offset = 4;
-		let header = yield* readHeader(file, offset);
-
-		while (!header.isLast && header.streamInfo !== VORBIS_STREAMINFO) {
-			offset = offset + 4 + header.length;
-			header = yield* readHeader(file, offset);
-		}
-
-		offset += 4;
-
-		const vorbisComment = yield* readVorbisComment(file, offset, header.length);
-
-		return vorbisComment;
-	});
-}
-
-const VORBIS_STREAMINFO = 4;
-
+// Types and Schemas
 const metadataSchema = z.object({
 	album: z.string(),
 	artist: z.string(),
@@ -65,12 +24,27 @@ const metadataSchema = z.object({
 
 type Metadata = z.infer<typeof metadataSchema>;
 
+const VORBIS_STREAMINFO = 4;
+
 const FlacHeader = Schema.Struct({
 	isLast: Bit, // 1 bit
 	streamInfo: Uint8, // 7 bits
 	length: Int32, // 3 bytes
 });
 
+const VorbisComment = Schema.Struct({
+	artist: Schema.String,
+	album: Schema.String,
+	title: Schema.String,
+});
+
+// Error class
+export class FlacError extends Data.TaggedError("FlacError")<{
+	message: string;
+	cause?: unknown;
+}> {}
+
+// Schema Transformers
 const FlacHeaderFromUint8Array = Schema.transformOrFail(
 	Schema.Struct({
 		uint8Array: Schema.Uint8ArrayFromSelf,
@@ -98,7 +72,6 @@ const FlacHeaderFromUint8Array = Schema.transformOrFail(
 				return yield* ParseResult.succeed(header);
 			});
 		},
-
 		encode(header, _, ast) {
 			const buffer = new ArrayBuffer(4);
 			const dataView = new DataView(buffer);
@@ -112,12 +85,6 @@ const FlacHeaderFromUint8Array = Schema.transformOrFail(
 		},
 	},
 );
-
-const VorbisComment = Schema.Struct({
-	artist: Schema.String,
-	album: Schema.String,
-	title: Schema.String,
-});
 
 const VorbisCommentFromUint8Array = Schema.transformOrFail(
 	Schema.Struct({
@@ -179,23 +146,6 @@ const VorbisCommentFromUint8Array = Schema.transformOrFail(
 					}
 				}
 
-				//catch:(error)=> ParseResult.fail(new ParseResult.Type(ast, error, "Failed to validate parsed metdata"))
-
-				//const foo = effect.promise(()=>metadataschema.parseasync(metadata))
-
-				//const valid = yield* Effect.tryPromise(() =>
-				//metadataSchema.parseAsync(metadata),
-				//).pipe(
-				//Effect.mapError((error) =>
-				//ParseResult.fail(
-				//new ParseResult.Type(ast, error, "Failed to validate"),
-				//),
-				//),
-				//Effect.map(ParseResult.succeed)
-				//);
-
-				//return yield* valid
-
 				const {
 					data: valid,
 					success: isValid,
@@ -218,18 +168,11 @@ const VorbisCommentFromUint8Array = Schema.transformOrFail(
 	},
 );
 
-function readVorbisComment(file: Uint8Array, offset: number, length: number) {
-	return Effect.gen(function* () {
-		const slice = file.slice(offset, offset + length);
-
-		const vorbisComment = yield* Schema.decode(VorbisCommentFromUint8Array)({
-			uint8Array: slice,
-			offset,
-			length,
-		});
-
-		return vorbisComment;
-	});
+// Helper functions
+function parseFieldValue(str: string): { key: string; value: string } | null {
+	const [key, value] = str.split("=").map((x) => x.trim());
+	if (!key || !value) return null;
+	return { key, value };
 }
 
 function readHeader(file: Uint8Array, offset: number) {
@@ -245,13 +188,57 @@ function readHeader(file: Uint8Array, offset: number) {
 	});
 }
 
-function parseFieldValue(str: string): { key: string; value: string } | null {
-	const [key, value] = str.split("=").map((x) => x.trim());
-	if (!key || !value) return null;
-	return { key, value };
+function readVorbisComment(file: Uint8Array, offset: number, length: number) {
+	return Effect.gen(function* () {
+		const slice = file.slice(offset, offset + length);
+
+		const vorbisComment = yield* Schema.decode(VorbisCommentFromUint8Array)({
+			uint8Array: slice,
+			offset,
+			length,
+		});
+
+		return vorbisComment;
+	});
 }
 
-export class FlacError extends Data.TaggedError("FlacError")<{
-	message: string;
-	cause?: unknown;
-}> {}
+// Public API
+export function isFlac(path: string) {
+	return Effect.gen(function* () {
+		const fs = yield* FileSystem.FileSystem;
+		const file = yield* fs.readFile(path);
+		const slice = file.slice(0, 4).toString();
+		return slice === "fLaC";
+	});
+}
+
+export function readMetadata(path: string) {
+	return Effect.gen(function* () {
+		const fs = yield* FileSystem.FileSystem;
+
+		const fileIsFlac = yield* isFlac(path);
+		if (!fileIsFlac) {
+			return yield* Effect.fail(
+				new FlacError({
+					message: "The file you are trying to parse as FLAC is NOT FLAC",
+				}),
+			);
+		}
+
+		const file = yield* fs.readFile(path);
+
+		let offset = 4;
+		let header = yield* readHeader(file, offset);
+
+		while (!header.isLast && header.streamInfo !== VORBIS_STREAMINFO) {
+			offset = offset + 4 + header.length;
+			header = yield* readHeader(file, offset);
+		}
+
+		offset += 4;
+
+		const vorbisComment = yield* readVorbisComment(file, offset, header.length);
+
+		return vorbisComment;
+	});
+}
