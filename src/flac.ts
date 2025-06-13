@@ -16,7 +16,7 @@ import { uint8Array } from "@effect/platform/HttpServerResponse";
 import { z } from "zod";
 
 export function isFlac(path: string) {
-	return Effect.gen(function*() {
+	return Effect.gen(function* () {
 		const fs = yield* FileSystem.FileSystem;
 		const file = yield* fs.readFile(path);
 		const slice = file.slice(0, 4).toString();
@@ -25,7 +25,7 @@ export function isFlac(path: string) {
 }
 
 export function readMetadata(path: string) {
-	return Effect.gen(function*() {
+	return Effect.gen(function* () {
 		const fs = yield* FileSystem.FileSystem;
 
 		const fileIsFlac = yield* isFlac(path);
@@ -49,16 +49,9 @@ export function readMetadata(path: string) {
 
 		offset += 4;
 
-		yield* Console.log({
-			header,
-			offset,
-		});
-
 		const vorbisComment = yield* readVorbisComment(file, offset, header.length);
 
-		yield* Console.table(vorbisComment)
-
-		return vorbisComment
+		return vorbisComment;
 	});
 }
 
@@ -87,7 +80,7 @@ const FlacHeaderFromUint8Array = Schema.transformOrFail(
 	{
 		strict: true,
 		decode({ uint8Array, offset }, _, ast) {
-			return Effect.gen(function*() {
+			return Effect.gen(function* () {
 				if (uint8Array.length < 4) {
 					return yield* ParseResult.fail(
 						new ParseResult.Type(ast, uint8Array, "UIntArray is too short"),
@@ -136,7 +129,7 @@ const VorbisCommentFromUint8Array = Schema.transformOrFail(
 	{
 		strict: true,
 		decode({ uint8Array, offset, length }, _, ast) {
-			return Effect.gen(function*() {
+			return Effect.gen(function* () {
 				const dv = new DataView(uint8Array.buffer, offset, length);
 
 				let cursor = 0;
@@ -226,9 +219,8 @@ const VorbisCommentFromUint8Array = Schema.transformOrFail(
 );
 
 function readVorbisComment(file: Uint8Array, offset: number, length: number) {
-	return Effect.gen(function*() {
+	return Effect.gen(function* () {
 		const slice = file.slice(offset, offset + length);
-		yield* Console.log(slice);
 
 		const vorbisComment = yield* Schema.decode(VorbisCommentFromUint8Array)({
 			uint8Array: slice,
@@ -241,7 +233,7 @@ function readVorbisComment(file: Uint8Array, offset: number, length: number) {
 }
 
 function readHeader(file: Uint8Array, offset: number) {
-	return Effect.gen(function*() {
+	return Effect.gen(function* () {
 		const slice = file.slice(offset, offset + 4);
 
 		const header = yield* Schema.decode(FlacHeaderFromUint8Array)({
@@ -262,4 +254,4 @@ function parseFieldValue(str: string): { key: string; value: string } | null {
 export class FlacError extends Data.TaggedError("FlacError")<{
 	message: string;
 	cause?: unknown;
-}> { }
+}> {}
