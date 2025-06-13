@@ -59,7 +59,7 @@ const FlacHeaderFromUint8Array = Schema.transformOrFail(
 	},
 );
 
-const VorbisCommentFromUint8Array = Schema.transformOrFail(
+const MetadataFromUint8Array = Schema.transformOrFail(
 	Schema.Struct({
 		uint8Array: Schema.Uint8ArrayFromSelf,
 		offset: Schema.Number,
@@ -159,7 +159,7 @@ function readVorbisComment(file: Uint8Array, offset: number, length: number) {
 	return Effect.gen(function* () {
 		const slice = file.slice(offset, offset + length);
 
-		const vorbisComment = yield* Schema.decode(VorbisCommentFromUint8Array)({
+		const vorbisComment = yield* Schema.decode(MetadataFromUint8Array)({
 			uint8Array: slice,
 			offset,
 			length,
