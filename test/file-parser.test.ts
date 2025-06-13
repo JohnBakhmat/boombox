@@ -19,6 +19,7 @@ test.effect("parseManyFiles should parse many files just fine", () =>
 		const input = [
 			"./test-data/11 - Tropical Fish.flac",
 			"./test-data/01 - hover.mp3",
+			"./test-data/01 - hover.fake.flac",
 		];
 		const actual = yield* parseManyFiles(input);
 
