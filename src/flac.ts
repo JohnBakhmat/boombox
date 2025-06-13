@@ -1,28 +1,7 @@
-import {
-	Chunk,
-	Console,
-	Data,
-	Effect,
-	Equal,
-	ParseResult,
-	pipe,
-	Schema,
-	Sink,
-	Stream,
-} from "effect";
+import { Data, Effect, Option, ParseResult, Schema } from "effect";
 import { FileSystem } from "@effect/platform";
 import { Bit, Int32, Uint8 } from "./utils";
-import { uint8Array } from "@effect/platform/HttpServerResponse";
-import { z } from "zod";
-
-// Types and Schemas
-const metadataSchema = z.object({
-	album: z.string(),
-	artist: z.string(),
-	title: z.string(),
-});
-
-type Metadata = z.infer<typeof metadataSchema>;
+import { type Metadata, MetadataSchema } from "./metadata";
 
 const VORBIS_STREAMINFO = 4;
 
@@ -30,12 +9,6 @@ const FlacHeader = Schema.Struct({
 	isLast: Bit, // 1 bit
 	streamInfo: Uint8, // 7 bits
 	length: Int32, // 3 bytes
-});
-
-const VorbisComment = Schema.Struct({
-	artist: Schema.String,
-	album: Schema.String,
-	title: Schema.String,
 });
 
 // Error class
@@ -92,7 +65,7 @@ const VorbisCommentFromUint8Array = Schema.transformOrFail(
 		offset: Schema.Number,
 		length: Schema.Number,
 	}),
-	VorbisComment,
+	MetadataSchema,
 	{
 		strict: true,
 		decode({ uint8Array, offset, length }, _, ast) {
@@ -146,20 +119,14 @@ const VorbisCommentFromUint8Array = Schema.transformOrFail(
 					}
 				}
 
-				const {
-					data: valid,
-					success: isValid,
-					error,
-				} = yield* Effect.promise(() =>
-					metadataSchema.safeParseAsync(metadata),
-				);
+				const valid = Schema.decodeUnknownOption(MetadataSchema)(metadata);
 
-				if (!isValid) {
+				if (Option.isNone(valid)) {
 					return yield* ParseResult.fail(
-						new ParseResult.Type(ast, error, "Metadata is not valid"),
+						new ParseResult.Type(ast, metadata, "Metadata is not valid"),
 					);
 				}
-				return yield* ParseResult.succeed(valid);
+				return yield* ParseResult.succeed(valid.value);
 			});
 		},
 		encode(x, _, ast) {
