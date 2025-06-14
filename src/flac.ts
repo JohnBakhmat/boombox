@@ -169,7 +169,15 @@ function readVorbisComment(file: Uint8Array, offset: number, length: number) {
 		});
 
 		return vorbisComment;
-	});
+	}).pipe(
+		Effect.withSpan("readVorbisComment", {
+			attributes: {
+				file,
+				offset,
+				length,
+			},
+		}),
+	);
 }
 
 // Public API
