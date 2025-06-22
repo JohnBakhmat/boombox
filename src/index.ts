@@ -1,8 +1,8 @@
-import { Console, Effect, Layer } from "effect";
-import { Env, EnvLive } from "./env";
+import { Effect, Layer } from "effect";
+import { EnvLive } from "./env";
 import { BunContext, BunRuntime } from "@effect/platform-bun";
-import { SqliteDrizzle } from "@effect/sql-drizzle/Sqlite";
-import { songTable } from "./db/schema";
+
+
 import { DatabaseLive } from "./db";
 import { readMetadata } from "./flac";
 

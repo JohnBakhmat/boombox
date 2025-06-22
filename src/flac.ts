@@ -77,9 +77,7 @@ const MetadataFromUint8Array = Schema.transformOrFail(
 				const vendorStringLength = dv.getUint32(cursor, true);
 				cursor += 4;
 
-				const vendorString = uint8Array
-					.slice(cursor, cursor + vendorStringLength)
-					.toString();
+				
 				cursor += vendorStringLength;
 
 				const numberOfFields = dv.getUint32(cursor, true);
@@ -147,7 +145,7 @@ function parseFieldValue(str: string): { key: string; value: string } | null {
 
 function readHeader(file: Uint8Array, offset: number) {
 	return Effect.gen(function* () {
-		const slice = file.slice(offset, offset + 4);
+		
 
 		const header = yield* Schema.decode(FlacHeaderFromUint8Array)({
 			uint8Array: file,

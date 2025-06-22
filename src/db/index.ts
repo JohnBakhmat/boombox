@@ -1,9 +1,9 @@
 import { SqliteClient } from "@effect/sql-sqlite-bun";
-import { SqlClient } from "@effect/sql";
+
 
 import * as SqliteDrizzle from "@effect/sql-drizzle/Sqlite";
-import { Effect, Layer } from "effect";
-import { Env } from "../env";
+import { Layer } from "effect";
+
 
 //const SqlLive = Layer.scoped(SqliteClient.SqliteClient, Effect.gen(function* () {
 

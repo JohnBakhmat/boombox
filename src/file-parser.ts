@@ -1,4 +1,4 @@
-import { Effect, Either, Option } from "effect";
+import { Effect, Either, } from "effect";
 import * as flac from "./flac";
 
 const SUPPORTED_EXTENSIONS = ["flac"] as const;
