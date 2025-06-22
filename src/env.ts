@@ -1,30 +1,24 @@
-import { Context, Data, Effect, Layer } from "effect";
-import { z } from "zod";
-
-const schema = z.object({
-	DB_URL: z.string().min(1),
-});
-type EnvSchema = z.infer<typeof schema>;
+import { Context, Data, Effect, Layer, Schema } from "effect";
 
 class EnvError extends Data.TaggedError("EnvError")<{
-	cause?: unknown;
-	message: string;
+    cause?: unknown;
+    message: string;
 }> {}
 
 export class Env extends Context.Tag("Env")<
-	Env,
-	{
-		readonly getEnv: Effect.Effect<EnvSchema, EnvError>;
-	}
+    Env,
+    { readonly getEnv: Effect.Effect<EnvSchema, EnvError>; }
 >() {}
 
+const schema = Schema.Struct({
+    DB_URL: Schema.NonEmptyString,
+    FOLDER_PATH: Schema.NonEmptyString,
+});
+
+type EnvSchema = Schema.Schema.Type<typeof schema>;
+
 export const EnvLive = Layer.succeed(Env, {
-	getEnv: Effect.tryPromise({
-		try: () => schema.parseAsync(process.env),
-		catch: (error) =>
-			new EnvError({
-				cause: error,
-				message: "Failed to parse environment variables",
-			}),
-	}),
+    getEnv: Schema.decodeUnknown(schema)(process.env).pipe(
+        Effect.mapError((e) => new EnvError({ message: "Environment is not valid", cause: e })),
+    ),
 });

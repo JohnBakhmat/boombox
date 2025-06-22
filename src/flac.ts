@@ -45,7 +45,7 @@ const FlacHeaderFromUint8Array = Schema.transformOrFail(
 				return yield* ParseResult.succeed(header);
 			});
 		},
-		encode(header, _, ast) {
+		encode(header, _, _ast) {
 			const buffer = new ArrayBuffer(4);
 			const dataView = new DataView(buffer);
 			dataView.setUint8(0, header.isLast ? 0x80 : 0x00);
