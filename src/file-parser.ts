@@ -1,5 +1,7 @@
+import { Env } from "./env";
 import * as flac from "./flac";
 import { Effect, Option, Console } from "effect";
+import { FileSystem, Path } from "@effect/platform";
 
 const SUPPORTED_EXTENSIONS = ["flac"] as const;
 type SupportedExtension = (typeof SUPPORTED_EXTENSIONS)[number];
@@ -39,5 +41,21 @@ export function parseManyFiles(paths: string[]) {
 		const successful = files.filter(Option.isSome).map((file) => file.value);
 
 		return successful;
+	});
+}
+
+export function readDirectory(dirPath: string) {
+	return Effect.gen(function* () {
+		const fs = yield* FileSystem.FileSystem;
+		const path = yield* Path.Path;
+
+		const files = yield* fs.readDirectory(dirPath, {
+			recursive: true,
+		});
+
+		const relative = files.map((file) => path.resolve(dirPath, file));
+		yield* Console.log(relative);
+
+		return yield* parseManyFiles(relative);
 	});
 }
