@@ -2,14 +2,14 @@ import { FileSystem } from "@effect/platform";
 import { Data, Effect, Option, ParseResult, Schema } from "effect";
 
 import { type Metadata, MetadataSchema } from "./metadata";
-import { Bit, Int32, Uint8 } from "./utils";
+import { Bit, Int24, safeParseInt, Uint7 } from "./utils";
 
 const VORBIS_STREAMINFO = 4;
 
 const FlacHeader = Schema.Struct({
 	isLast: Bit, // 1 bit
-	streamInfo: Uint8, // 7 bits
-	length: Int32, // 3 bytes
+	streamInfo: Uint7, // 7 bits
+	length: Int24, // 3 bytes
 });
 
 // Error class
@@ -110,10 +110,10 @@ const MetadataFromUint8Array = Schema.transformOrFail(
 
 				const valid = Schema.decodeUnknownOption(MetadataSchema)(metadata);
 
-				if (Option.isNone(valid)) {
-					return yield* ParseResult.fail(new ParseResult.Type(ast, metadata, "Metadata is not valid"));
-				}
-				return yield* ParseResult.succeed(valid.value);
+				return yield* Option.match(valid, {
+					onSome: (value) => ParseResult.succeed(value),
+					onNone: () => ParseResult.fail(new ParseResult.Type(ast, metadata, "Metadata is not valid")),
+				});
 			});
 		},
 		encode(x, _, ast) {
@@ -123,12 +123,6 @@ const MetadataFromUint8Array = Schema.transformOrFail(
 );
 
 // Helper functions
-
-function safeParseInt(str: string, radix: number = 10): Effect.Effect<Option.Option<number>> {
-	return Effect.gen(function* () {
-		return yield* Effect.try(() => Number.parseInt(str, radix)).pipe(Effect.option);
-	});
-}
 
 function parseFieldValue(str: string): { key: string; value: string } | null {
 	const [key, value] = str.split("=").map((x) => x.trim());
