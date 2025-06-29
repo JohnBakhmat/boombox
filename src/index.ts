@@ -3,6 +3,7 @@ import { Console, Effect, Layer } from "effect";
 import { DatabaseLive } from "./db";
 import { EnvLive } from "./env";
 import { readMetadata } from "./flac";
+import { FileSystem } from "@effect/platform";
 
 const layers = Layer.mergeAll(BunContext.layer, EnvLive, DatabaseLive);
 

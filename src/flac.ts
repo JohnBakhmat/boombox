@@ -1,7 +1,8 @@
-import { Bit, Int32, Uint8 } from "./utils";
-import { Data, Effect, Option, ParseResult, Schema } from "effect";
-import { type Metadata, MetadataSchema } from "./metadata";
 import { FileSystem } from "@effect/platform";
+import { Data, Effect, Option, ParseResult, Schema } from "effect";
+
+import { type Metadata, MetadataSchema } from "./metadata";
+import { Bit, Int32, Uint8 } from "./utils";
 
 const VORBIS_STREAMINFO = 4;
 
@@ -12,10 +13,7 @@ const FlacHeader = Schema.Struct({
 });
 
 // Error class
-export class FlacError extends Data.TaggedError("FlacError")<{
-	message: string;
-	cause?: unknown;
-}> {}
+export class FlacError extends Data.TaggedError("FlacError")<{ message: string; cause?: unknown }> {}
 
 // Schema Transformers
 const FlacHeaderFromUint8Array = Schema.transformOrFail(
@@ -43,16 +41,8 @@ const FlacHeaderFromUint8Array = Schema.transformOrFail(
 				return yield* ParseResult.succeed(header);
 			});
 		},
-		encode(header, _, _ast) {
-			const buffer = new ArrayBuffer(4);
-			const dataView = new DataView(buffer);
-			dataView.setUint8(0, header.isLast ? 0x80 : 0x00);
-			dataView.setUint8(1, header.streamInfo);
-			dataView.setUint32(1, header.length, false);
-			return ParseResult.succeed({
-				uint8Array: new Uint8Array(buffer),
-				offset: 0,
-			});
+		encode(x, _, ast) {
+			return ParseResult.fail(new ParseResult.Type(ast, x, "Unimplemented"));
 		},
 	},
 );
@@ -108,7 +98,10 @@ const MetadataFromUint8Array = Schema.transformOrFail(
 							metadata.title = value;
 							break;
 						case "TRACKNUMBER":
-							metadata.trackNumber = Number.parseInt(value, 10);
+							const parsedNumber = yield* safeParseInt(value, 10);
+							if (Option.isSome(parsedNumber)) {
+								metadata.trackNumber = parsedNumber.value;
+							}
 							break;
 						default:
 							continue;
@@ -130,6 +123,13 @@ const MetadataFromUint8Array = Schema.transformOrFail(
 );
 
 // Helper functions
+
+function safeParseInt(str: string, radix: number = 10): Effect.Effect<Option.Option<number>> {
+	return Effect.gen(function* () {
+		return yield* Effect.try(() => Number.parseInt(str, radix)).pipe(Effect.option);
+	});
+}
+
 function parseFieldValue(str: string): { key: string; value: string } | null {
 	const [key, value] = str.split("=").map((x) => x.trim());
 	if (!key || !value) {
