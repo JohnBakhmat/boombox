@@ -1,5 +1,5 @@
 import { FileSystem } from "@effect/platform";
-import { Data, Effect, Option, ParseResult, Schema } from "effect";
+import { Console, Data, Effect, Option, ParseResult, Schema } from "effect";
 
 import { type Metadata, MetadataSchema } from "./metadata";
 import { Bit, Int24, safeParseInt, Uint7 } from "./utils";
@@ -129,7 +129,7 @@ function parseFieldValue(str: string): { key: string; value: string } | null {
 	if (!key || !value) {
 		return null;
 	}
-	return { key, value };
+	return { key: key.toUpperCase(), value };
 }
 
 function readHeader(file: Uint8Array, offset: number) {
@@ -215,6 +215,8 @@ export function readMetadata(path: string) {
 		}
 
 		offset += 4;
+
+		yield* Console.log(offset);
 
 		const vorbisComment = yield* readVorbisComment(file, offset, header.length);
 

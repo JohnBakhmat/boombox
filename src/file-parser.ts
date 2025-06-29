@@ -1,5 +1,5 @@
 import * as flac from "./flac";
-import { Effect, Option } from "effect";
+import { Effect, Option, Console } from "effect";
 
 const SUPPORTED_EXTENSIONS = ["flac"] as const;
 type SupportedExtension = (typeof SUPPORTED_EXTENSIONS)[number];
@@ -34,6 +34,7 @@ export function parseManyFiles(paths: string[]) {
 		const files = yield* Effect.all(tasks, {
 			concurrency: 10,
 		});
+		yield* Console.log(files);
 
 		const successful = files.filter(Option.isSome).map((file) => file.value);
 
