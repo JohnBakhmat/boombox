@@ -1,7 +1,6 @@
 import { BunContext, BunRuntime } from "@effect/platform-bun";
-import { } from "@effect/sql-sqlite-bun";
 import { Effect, Layer } from "effect";
-import { SqlLive } from ".";
+import { SqlLive } from "./index";
 import { drizzle } from "drizzle-orm/bun-sqlite";
 import { migrate } from "drizzle-orm/bun-sqlite/migrator";
 import { Database } from "bun:sqlite";

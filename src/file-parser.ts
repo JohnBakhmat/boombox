@@ -1,5 +1,5 @@
-import { Effect, Either, } from "effect";
 import * as flac from "./flac";
+import { Effect, Either } from "effect";
 
 const SUPPORTED_EXTENSIONS = ["flac"] as const;
 type SupportedExtension = (typeof SUPPORTED_EXTENSIONS)[number];
@@ -8,8 +8,7 @@ export function parseFile(path: string) {
 	return Effect.gen(function* () {
 		const extension = path.split(".").pop();
 		const assumedType =
-			extension &&
-			SUPPORTED_EXTENSIONS.includes(extension as SupportedExtension)
+			extension && SUPPORTED_EXTENSIONS.includes(extension as SupportedExtension)
 				? (extension as SupportedExtension)
 				: null;
 
@@ -37,9 +36,7 @@ export function parseManyFiles(paths: string[]) {
 			mode: "either",
 		});
 
-		const successful = files
-			.filter((file) => Either.isRight(file))
-			.map((file) => file.right);
+		const successful = files.filter((file) => Either.isRight(file)).map((file) => file.right);
 
 		return successful;
 	});
