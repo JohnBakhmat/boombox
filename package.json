@@ -5,5 +5,10 @@
     "web",
     "backend",
     "shared"
-  ]
+  ],
+  "scripts": {
+    "dev": "bun --filter '*' dev",
+    "db:migrate": "bun --filter @boombox/backend db:migrate",
+    "db:gen": "bun --filter @boombox/backend db:gen"
+  }
 }
