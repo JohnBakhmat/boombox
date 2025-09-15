@@ -20,6 +20,7 @@
 		"typescript": "^5.9.2"
 	},
 	"dependencies": {
+		"@boombox/shared": "workspace:*",
 		"@effect/opentelemetry": "^0.56.5",
 		"@effect/platform-bun": "^0.79.0",
 		"@effect/sql-drizzle": "^0.43.0",
