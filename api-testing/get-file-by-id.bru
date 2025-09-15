@@ -1,0 +1,19 @@
+meta {
+  name: get-file-by-id
+  type: http
+  seq: 3
+}
+
+get {
+  url: http://localhost:3003/file/:id
+  body: none
+  auth: inherit
+}
+
+params:path {
+  id: 01994d9b-0c54-7000-86f6-4d803af135f2
+}
+
+settings {
+  encodeUrl: true
+}

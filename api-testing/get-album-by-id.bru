@@ -1,0 +1,19 @@
+meta {
+  name: get-album-by-id
+  type: http
+  seq: 2
+}
+
+get {
+  url: http://localhost:3003/album/:id
+  body: none
+  auth: inherit
+}
+
+params:path {
+  id: 01994d9b-0c5c-7003-862e-ad9a8de164df
+}
+
+settings {
+  encodeUrl: true
+}

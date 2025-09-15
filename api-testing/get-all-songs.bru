@@ -1,0 +1,15 @@
+meta {
+  name: get-all-songs
+  type: http
+  seq: 1
+}
+
+get {
+  url: http://localhost:3003/songs
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+}
