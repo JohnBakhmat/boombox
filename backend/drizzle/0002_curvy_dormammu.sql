@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX `song_fileId_unique` ON `song` (`fileId`);

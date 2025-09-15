@@ -1,0 +1,15 @@
+@font-face {
+	font-family: "Geist";
+	src: url("/fonts/Geist[wght].woff2") format("woff2");
+}
+
+.track-row-grid {
+	grid-template-areas:
+		"number title duration"
+		"number artists duration";
+
+	display: grid;
+	grid-template-columns: auto 1fr auto;
+	grid-template-rows: repeat(minmax(0 auto), 2);
+	align-items: center;
+}

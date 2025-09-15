@@ -1,0 +1,189 @@
+import { SqliteDrizzle } from "@effect/sql-drizzle/Sqlite";
+import { Console, Data, Effect, Layer, ManagedRuntime } from "effect";
+import { Elysia, status, t } from "elysia";
+import { DatabaseLive } from "./db";
+import { BunContext } from "@effect/platform-bun";
+import { EnvLive } from "./env";
+import { albumTable, artistTable, fileTable, songTable, songToArtistTable } from "./db/schema";
+import { eq } from "drizzle-orm";
+import { openapi } from "@elysiajs/openapi";
+import { first } from "effect/GroupBy";
+
+class FileNotFoundError extends Data.TaggedError("FileNotFoundError")<{
+	message: string;
+	cause?: unknown;
+}> {}
+
+export function startApi() {
+	new Elysia()
+		.use(openapi())
+		.get("/", "Hello Elysia")
+		.get("/album/:id", ({ params: { id } }) =>
+			runtime.runPromise(
+				Effect.gen(function* () {
+					const db = yield* DatabaseLive;
+					const rows = yield* db
+						.select({
+							album: albumTable,
+							song: {
+								id: songTable.id,
+								fileId: songTable.fileId,
+								title: songTable.title,
+							},
+							artist: artistTable,
+						})
+						.from(albumTable)
+						.innerJoin(songTable, eq(songTable.albumId, albumTable.id))
+						.innerJoin(songToArtistTable, eq(songToArtistTable.songId, songTable.id))
+						.innerJoin(artistTable, eq(songToArtistTable.artistId, artistTable.id))
+						.where(eq(albumTable.id, id));
+
+					yield* Console.table(rows);
+
+					const firstRow = rows.at(0);
+					if (!firstRow) {
+						return [];
+					}
+
+					const songsMap = rows.reduce<Record<string, any>>((acc, row) => {
+						const { song, artist } = row;
+
+						if (!acc[song.id]) {
+							acc[song.id] = {
+								id: song.id,
+								fileId: song.fileId,
+								title: song.title,
+								artists: [],
+							};
+						}
+
+						if (artist) {
+							acc[song.id].artists.push(artist);
+						}
+
+						return acc;
+					}, {});
+
+					const album = {
+						id: firstRow.album.id,
+						title: firstRow.album.title,
+						songs: Object.values(songsMap),
+					};
+
+					return album;
+				}),
+			),
+		)
+		.get(
+			"/file/:id",
+			({ params: { id }, set }) =>
+				runtime.runPromise(
+					Effect.gen(function* () {
+						const db = yield* DatabaseLive;
+
+						const files = yield* db.select().from(fileTable).where(eq(fileTable.id, id)).limit(1);
+
+						const file = files.at(0);
+
+						if (!file) {
+							return yield* Effect.fail(
+								new FileNotFoundError({
+									message: `Failed to find file with id ${id}`,
+									cause: { id },
+								}),
+							);
+						}
+
+						const fileHandle = Bun.file(file.path);
+
+						// Check if file exists
+						if (!(yield* Effect.tryPromise(() => fileHandle.exists()))) {
+							return yield* Effect.fail(
+								new FileNotFoundError({
+									message: `File not found on disk: ${file.path}`,
+									cause: { id, path: file.path },
+								}),
+							);
+						}
+
+						// Set appropriate headers
+						set.headers["Content-Type"] = fileHandle.type || "application/octet-stream";
+						set.headers["Content-Disposition"] = `attachment; filename="${file.path.split("/").pop()}"`;
+
+						return fileHandle;
+
+						return file;
+					}).pipe(Effect.catchTag("FileNotFoundError", (e) => Effect.succeed(status(404, e.message)))),
+				),
+			{
+				params: t.Object({
+					id: t.String(),
+				}),
+			},
+		)
+		.get("/songs", () =>
+			runtime.runPromise(
+				Effect.gen(function* () {
+					const db = yield* DatabaseLive;
+					const rows = yield* Effect.tryPromise(() =>
+						db
+							.select({
+								song: songTable,
+								album: albumTable,
+								artist: artistTable,
+							})
+							.from(songTable)
+							.innerJoin(albumTable, eq(songTable.albumId, albumTable.id))
+							.innerJoin(songToArtistTable, eq(songToArtistTable.songId, songTable.id))
+							.innerJoin(artistTable, eq(songToArtistTable.artistId, artistTable.id))
+							.all(),
+					);
+
+					yield* Console.dir(rows);
+
+					const reduced = rows.reduce<Record<string, GetSongType>>((acc, row) => {
+						const { song, album, artist } = row;
+
+						if (!acc[song.id]) {
+							acc[song.id] = {
+								id: song.id,
+								fileId: song.fileId,
+								title: song.title,
+								album: {
+									id: album.id,
+									title: album.title,
+								},
+								artists: [],
+							};
+						}
+
+						if (artist) {
+							acc[song.id].artists.push(artist);
+						}
+
+						return acc;
+					}, {});
+
+					return Object.values(reduced);
+				}).pipe(Effect.withSpan("/get-songs")),
+			),
+		)
+		.listen(3003);
+}
+
+type GetSongType = {
+	id: string;
+	fileId: string;
+	title: string;
+	album: {
+		id: string;
+		title: string;
+	};
+	artists: Array<{
+		id: string;
+		name: string;
+	}>;
+};
+
+const layers = Layer.mergeAll(BunContext.layer, EnvLive, DatabaseLive.Default);
+const runtime = ManagedRuntime.make(layers);

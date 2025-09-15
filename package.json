@@ -1,0 +1,9 @@
+{
+  "name": "boombox",
+  "private": true,
+  "workspaces": [
+    "web",
+    "backend",
+    "shared"
+  ]
+}

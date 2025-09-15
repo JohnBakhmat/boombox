@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX `file_path_unique` ON `file` (`path`);

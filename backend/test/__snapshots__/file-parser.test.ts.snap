@@ -1,0 +1,9 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`parseFile should parse flac just fine 1`] = `
+{
+  "album": "「midnight cruisin’」+「MUGSHOT」",
+  "artist": "濱田金吾",
+  "title": "TROPICAL FISH",
+}
+`;
