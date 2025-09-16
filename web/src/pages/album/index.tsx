@@ -6,7 +6,7 @@ import { Link } from "waku";
 async function getMock() {
 	return {
 		title: "SISTER",
-		cover: "https://images.genius.com/04fb7f45d7023e0e608278c4fdcc5c14.1000x1000x1.png",
+		cover: "https://writteninmusic.com/wp-content/uploads/2025/09/TOP-Breach.jpg",
 		artists: [
 			{
 				id: "1234",
@@ -119,7 +119,7 @@ export default async function AlbumPage() {
 		Effect.gen(function* () {
 			const data = yield* Effect.tryPromise(() => getMock());
 
-			const album = yield* fetchAlbum("01994481-4827-7006-a05e-59b6aefa2ddb");
+			const album = yield* fetchAlbum("019950fd-d124-7007-934a-49bc1fed41a2");
 
 			return (
 				<div className="grid grid-cols-1 lg:grid-cols-[1fr_4fr] max-w-6xl w-full gap-x-8 px-8 py-12">
@@ -130,7 +130,7 @@ export default async function AlbumPage() {
 								src={data.cover}
 								width={900}
 								height={900}
-								className="max-w-[400px] max-h-[400px] aspect-square min-w-[400px] min-h-[400px] rounded-2xl transform rotate-1 hover:rotate-0 transition-transform duration-500"
+								className="max-w-[400px] max-h-[400px] aspect-square min-w-[400px] min-h-[400px] rounded-2xl transform rotate-1 hover:rotate-0 transition-transform duration-500 object-cover"
 							/>
 
 							<div className="space-y-3">
