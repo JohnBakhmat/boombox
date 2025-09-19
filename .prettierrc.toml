@@ -1,0 +1,10 @@
+tabWidth = 4
+useTabs = true
+printWidth = 120
+semi = true
+experimentalOperatorPosition = "start"
+quoteProps = "consistent"
+objectWrap = "preserve"
+bracketSameLine = false
+
+plugins=['@prettier/plugin-oxc']
