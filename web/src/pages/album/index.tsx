@@ -54,6 +54,7 @@ const AlbumPage = () => Effect.runPromise(Effect.gen(function*() {
 
 				{albums.map(album => <AlbumCard
 					album={album}
+					key={album.id}
 
 				/>)}
 
