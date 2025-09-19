@@ -1,4 +1,3 @@
-import { SqliteDrizzle } from "@effect/sql-drizzle/Sqlite";
 import { Console, Context, Data, Effect, Layer, ManagedRuntime } from "effect";
 import { Elysia, status, t } from "elysia";
 import { DatabaseLive } from "./db";
@@ -7,9 +6,9 @@ import { EnvLive } from "./env";
 import { albumTable, artistTable, artistToAlbumTable, fileTable, songTable, songToArtistTable } from "./db/schema";
 import { eq } from "drizzle-orm";
 import { openapi } from "@elysiajs/openapi";
-import { first } from "effect/GroupBy";
 import type { Album, AlbumWithArtist, Artist, Song } from "./db/types";
 import type { SqlError } from "@effect/sql";
+import { pipe } from "effect";
 
 class FileNotFoundError extends Data.TaggedError("FileNotFoundError")<{
 	message: string;
@@ -131,19 +130,17 @@ export function startApi() {
 		.use(openapi())
 		.get("/", "Hello Elysia")
 		.get("/albums", () =>
-			runtime.runPromise(
-				Effect.gen(function* () {
-					const api = yield* ApiService;
-					return yield* api.getAlbumList();
-				}),
+			pipe(
+				ApiService,
+				Effect.andThen((x) => x.getAlbumList()),
+				runtime.runPromise,
 			),
 		)
 		.get("/album/:id", ({ params: { id } }) =>
-			runtime.runPromise(
-				Effect.gen(function* () {
-					const api = yield* ApiService;
-					return yield* api.getAlbum(id);
-				}),
+			pipe(
+				ApiService,
+				Effect.andThen((x) => x.getAlbum(id)),
+				runtime.runPromise,
 			),
 		)
 		.get(
