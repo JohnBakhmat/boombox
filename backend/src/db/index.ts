@@ -2,7 +2,7 @@ import { SqliteClient, SqliteMigrator } from "@effect/sql-sqlite-bun";
 
 import * as SqliteDrizzle from "@effect/sql-drizzle/Sqlite";
 import { Config, Effect, Layer, pipe } from "effect";
-import { BunContext, BunFileSystem } from "@effect/platform-bun";
+import { BunFileSystem } from "@effect/platform-bun";
 import * as schema from "./schema";
 
 //export const SqlLive = SqliteClient.layer({

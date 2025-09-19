@@ -1,12 +1,12 @@
 "use client";
 
 import { Pause, Play } from "lucide-react";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { fileAtom, isPlayingAtom, mainVolumeAtom } from "@/atoms";
 import { useAtom, useAtomValue } from "jotai";
-import { Progress } from "./ui/progress";
+
 import { Slider } from "./ui/slider";
-import { Input } from "./ui/input";
+
 import { scale } from "@/utils";
 
 const sampleFile = "http://localhost:3003/file/01994481-481d-7009-92c9-4a4ba6298844";
