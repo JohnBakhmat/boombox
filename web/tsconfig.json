@@ -14,7 +14,7 @@
 		"noUncheckedIndexedAccess": true,
 		"exactOptionalPropertyTypes": true,
 		"jsx": "react-jsx",
-		"baseUrl":".",
+		"baseUrl": ".",
 		"paths": {
 			"@/*": ["./src/*"]
 		}

@@ -63,7 +63,6 @@ async function getMock() {
 	};
 }
 
-
 const ArtistSchema = Schema.Struct({
 	id: Schema.NonEmptyString,
 	name: Schema.NonEmptyString,
@@ -82,7 +81,7 @@ const AlbumSchema = Schema.Struct({
 });
 
 function fetchAlbum(id: string) {
-	return Effect.gen(function*() {
+	return Effect.gen(function* () {
 		const request = yield* Effect.tryPromise({
 			try: () => fetch(`http://localhost:3003/album/${id}`),
 			catch: (err) =>
@@ -106,9 +105,9 @@ function fetchAlbum(id: string) {
 	}).pipe(Effect.tapError((err) => Console.error(err)));
 }
 
-export default async function AlbumPage({ id }: PageProps<'/album/[id]'>) {
+export default async function AlbumPage({ id }: PageProps<"/album/[id]">) {
 	return await Effect.runPromise(
-		Effect.gen(function*() {
+		Effect.gen(function* () {
 			const data = yield* Effect.tryPromise(() => getMock());
 
 			const album = yield* fetchAlbum(id);
@@ -168,10 +167,8 @@ export default async function AlbumPage({ id }: PageProps<'/album/[id]'>) {
 	);
 }
 
-
 export async function getConfig() {
 	return {
-		render: "dynamic" // TODO: Change to static with staticPaths:[''],
-	} as const
+		render: "dynamic", // TODO: Change to static with staticPaths:[''],
+	} as const;
 }
-
