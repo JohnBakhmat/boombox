@@ -1,23 +1,77 @@
 import { SqliteDrizzle } from "@effect/sql-drizzle/Sqlite";
-import { Console, Data, Effect, Layer, ManagedRuntime } from "effect";
+import { Console, Context, Data, Effect, Layer, ManagedRuntime } from "effect";
 import { Elysia, status, t } from "elysia";
 import { DatabaseLive } from "./db";
 import { BunContext } from "@effect/platform-bun";
 import { EnvLive } from "./env";
-import { albumTable, artistTable, fileTable, songTable, songToArtistTable } from "./db/schema";
+import { albumTable, artistTable, artistToAlbumTable, fileTable, songTable, songToArtistTable } from "./db/schema";
 import { eq } from "drizzle-orm";
 import { openapi } from "@elysiajs/openapi";
 import { first } from "effect/GroupBy";
+import type { Album, AlbumWithArtist } from "./db/types";
+import type { SqlError } from "@effect/sql";
 
 class FileNotFoundError extends Data.TaggedError("FileNotFoundError")<{
 	message: string;
 	cause?: unknown;
 }> {}
 
+class ApiService extends Context.Tag("ApiService")<
+	ApiService,
+	{
+		readonly getAlbumList: () => Effect.Effect<AlbumWithArtist[], SqlError.SqlError, DatabaseLive>;
+	}
+>() {}
+
+const ApiLive = Layer.effect(
+	ApiService,
+	Effect.gen(function* () {
+		const db = yield* DatabaseLive;
+
+		return {
+			getAlbumList: () =>
+				Effect.gen(function* () {
+					const rows = yield* db
+						.select({
+							album: albumTable,
+							artist: artistTable,
+						})
+						.from(albumTable)
+						.innerJoin(artistToAlbumTable, eq(albumTable.id, artistToAlbumTable.albumId))
+						.innerJoin(artistTable, eq(artistTable.id, artistToAlbumTable.artistId));
+
+					const result = rows.reduce<Record<string, AlbumWithArtist>>((acc, cur) => {
+						const albumId = cur.album.id;
+
+						if (!acc[albumId]) {
+							acc[albumId] = {
+								...cur.album,
+								artists: [],
+							};
+						}
+
+						acc[albumId]?.artists.push(cur.artist);
+						return acc;
+					}, {});
+
+					return Object.values(result);
+				}),
+		};
+	}),
+);
+
 export function startApi() {
 	new Elysia()
 		.use(openapi())
 		.get("/", "Hello Elysia")
+		.get("/albums", () =>
+			runtime.runPromise(
+				Effect.gen(function* () {
+					const api = yield* ApiService;
+					return yield* api.getAlbumList();
+				}),
+			),
+		)
 		.get("/album/:id", ({ params: { id } }) =>
 			runtime.runPromise(
 				Effect.gen(function* () {
@@ -185,5 +239,10 @@ type GetSongType = {
 	}>;
 };
 
-const layers = Layer.mergeAll(BunContext.layer, EnvLive, DatabaseLive.Default);
+const layers = Layer.mergeAll(
+	BunContext.layer,
+	EnvLive,
+	DatabaseLive.Default,
+	Layer.provide(ApiLive, DatabaseLive.Default),
+);
 const runtime = ManagedRuntime.make(layers);
