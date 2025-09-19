@@ -165,8 +165,10 @@ export function startApi() {
 
 						const fileHandle = Bun.file(file.path);
 
+						const fileExists = yield* Effect.tryPromise(() => fileHandle.exists());
+
 						// Check if file exists
-						if (!(yield* Effect.tryPromise(() => fileHandle.exists()))) {
+						if (!fileExists) {
 							return yield* Effect.fail(
 								new FileNotFoundError({
 									message: `File not found on disk: ${file.path}`,
