@@ -1,6 +1,6 @@
 import { SongRow } from "@/components/song-row";
-import { Console, Data, Effect, Schema } from "effect";
-import { Struct } from "effect/Schema";
+import { FetchFailedError, JsonParseError } from "@/lib/errors";
+import { Console, Effect, Schema } from "effect";
 import { Link } from "waku";
 import { PageProps } from "waku/router";
 
@@ -63,15 +63,6 @@ async function getMock() {
 	};
 }
 
-class FetchFailedError extends Data.TaggedError("FetchFailedError")<{
-	message: string;
-	cause?: unknown;
-}> { }
-
-class JsonParseError extends Data.TaggedError("JsonParseError")<{
-	message: string;
-	cause?: unknown;
-}> { }
 
 const ArtistSchema = Schema.Struct({
 	id: Schema.NonEmptyString,
