@@ -2,6 +2,7 @@ import { SongRow } from "@/components/song-row";
 import { Console, Data, Effect, Schema } from "effect";
 import { Struct } from "effect/Schema";
 import { Link } from "waku";
+import { PageProps } from "waku/router";
 
 async function getMock() {
 	return {
@@ -65,12 +66,12 @@ async function getMock() {
 class FetchFailedError extends Data.TaggedError("FetchFailedError")<{
 	message: string;
 	cause?: unknown;
-}> {}
+}> { }
 
 class JsonParseError extends Data.TaggedError("JsonParseError")<{
 	message: string;
 	cause?: unknown;
-}> {}
+}> { }
 
 const ArtistSchema = Schema.Struct({
 	id: Schema.NonEmptyString,
@@ -90,7 +91,7 @@ const AlbumSchema = Schema.Struct({
 });
 
 function fetchAlbum(id: string) {
-	return Effect.gen(function* () {
+	return Effect.gen(function*() {
 		const request = yield* Effect.tryPromise({
 			try: () => fetch(`http://localhost:3003/album/${id}`),
 			catch: (err) =>
@@ -114,12 +115,12 @@ function fetchAlbum(id: string) {
 	}).pipe(Effect.tapError((err) => Console.error(err)));
 }
 
-export default async function AlbumPage() {
+export default async function AlbumPage({ id }: PageProps<'/album/[id]'>) {
 	return await Effect.runPromise(
-		Effect.gen(function* () {
+		Effect.gen(function*() {
 			const data = yield* Effect.tryPromise(() => getMock());
 
-			const album = yield* fetchAlbum("019950fd-d124-7007-934a-49bc1fed41a2");
+			const album = yield* fetchAlbum(id);
 
 			return (
 				<div className="grid grid-cols-1 lg:grid-cols-[1fr_4fr] max-w-6xl w-full gap-x-8 px-8 py-12">
@@ -172,6 +173,14 @@ export default async function AlbumPage() {
 					</div>
 				</div>
 			);
-		}),
+		}).pipe(Effect.catchAll(() => Effect.succeed("Not found"))),
 	);
 }
+
+
+export async function getConfig() {
+	return {
+		render: "dynamic" // TODO: Change to static with staticPaths:[''],
+	} as const
+}
+
