@@ -8,18 +8,29 @@ import { albumTable, artistTable, artistToAlbumTable, fileTable, songTable, song
 import { eq } from "drizzle-orm";
 import { openapi } from "@elysiajs/openapi";
 import { first } from "effect/GroupBy";
-import type { Album, AlbumWithArtist } from "./db/types";
+import type { Album, AlbumWithArtist, Artist, Song } from "./db/types";
 import type { SqlError } from "@effect/sql";
 
 class FileNotFoundError extends Data.TaggedError("FileNotFoundError")<{
 	message: string;
 	cause?: unknown;
 }> {}
+class AlbumNotFoundError extends Data.TaggedError("AlbumNotFoundError")<{
+	message: string;
+	cause?: unknown;
+}> {}
+
+type SongWithArtists = Song & { artists: Artist[] };
+
+type GetAlbum = Album & { songs: Array<Omit<SongWithArtists, "albumId">> };
 
 class ApiService extends Context.Tag("ApiService")<
 	ApiService,
 	{
 		readonly getAlbumList: () => Effect.Effect<AlbumWithArtist[], SqlError.SqlError, DatabaseLive>;
+		readonly getAlbum: (
+			id: string,
+		) => Effect.Effect<GetAlbum, SqlError.SqlError | AlbumNotFoundError, DatabaseLive>;
 	}
 >() {}
 
@@ -29,6 +40,61 @@ const ApiLive = Layer.effect(
 		const db = yield* DatabaseLive;
 
 		return {
+			getAlbum: (id: string) =>
+				Effect.gen(function* () {
+					const rows = yield* db
+						.select({
+							album: albumTable,
+							song: {
+								id: songTable.id,
+								fileId: songTable.fileId,
+								title: songTable.title,
+							},
+							artist: artistTable,
+						})
+						.from(albumTable)
+						.innerJoin(songTable, eq(songTable.albumId, albumTable.id))
+						.innerJoin(songToArtistTable, eq(songToArtistTable.songId, songTable.id))
+						.innerJoin(artistTable, eq(songToArtistTable.artistId, artistTable.id))
+						.where(eq(albumTable.id, id));
+
+					yield* Console.table(rows);
+
+					const firstRow = rows.at(0);
+					if (!firstRow) {
+						return yield* new AlbumNotFoundError({
+							message: "Can't extract album from selected rows",
+							cause: rows,
+						});
+					}
+
+					const songsMap = rows.reduce<Record<string, Omit<SongWithArtists, "albumId">>>((acc, row) => {
+						const { song, artist } = row;
+
+						if (!acc[song.id]) {
+							acc[song.id] = {
+								id: song.id,
+								fileId: song.fileId,
+								title: song.title,
+								artists: [] as Artist[],
+							};
+						}
+
+						if (artist) {
+							acc[song.id].artists.push(artist);
+						}
+
+						return acc;
+					}, {});
+
+					const album = {
+						id: firstRow.album.id,
+						title: firstRow.album.title,
+						songs: Object.values(songsMap),
+					};
+
+					return album;
+				}),
 			getAlbumList: () =>
 				Effect.gen(function* () {
 					const rows = yield* db
@@ -75,56 +141,8 @@ export function startApi() {
 		.get("/album/:id", ({ params: { id } }) =>
 			runtime.runPromise(
 				Effect.gen(function* () {
-					const db = yield* DatabaseLive;
-					const rows = yield* db
-						.select({
-							album: albumTable,
-							song: {
-								id: songTable.id,
-								fileId: songTable.fileId,
-								title: songTable.title,
-							},
-							artist: artistTable,
-						})
-						.from(albumTable)
-						.innerJoin(songTable, eq(songTable.albumId, albumTable.id))
-						.innerJoin(songToArtistTable, eq(songToArtistTable.songId, songTable.id))
-						.innerJoin(artistTable, eq(songToArtistTable.artistId, artistTable.id))
-						.where(eq(albumTable.id, id));
-
-					yield* Console.table(rows);
-
-					const firstRow = rows.at(0);
-					if (!firstRow) {
-						return [];
-					}
-
-					const songsMap = rows.reduce<Record<string, any>>((acc, row) => {
-						const { song, artist } = row;
-
-						if (!acc[song.id]) {
-							acc[song.id] = {
-								id: song.id,
-								fileId: song.fileId,
-								title: song.title,
-								artists: [],
-							};
-						}
-
-						if (artist) {
-							acc[song.id].artists.push(artist);
-						}
-
-						return acc;
-					}, {});
-
-					const album = {
-						id: firstRow.album.id,
-						title: firstRow.album.title,
-						songs: Object.values(songsMap),
-					};
-
-					return album;
+					const api = yield* ApiService;
+					return yield* api.getAlbum(id);
 				}),
 			),
 		)

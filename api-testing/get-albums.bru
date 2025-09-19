@@ -1,0 +1,15 @@
+meta {
+  name: get-albums
+  type: http
+  seq: 4
+}
+
+get {
+  url: http://localhost:3003/albums
+  body: none
+  auth: inherit
+}
+
+settings {
+  encodeUrl: true
+}
