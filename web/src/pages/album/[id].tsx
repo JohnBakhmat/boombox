@@ -1,6 +1,7 @@
 import { SongRow } from "@/components/song-row";
 import { FetchFailedError, JsonParseError } from "@/lib/errors";
 import { Console, Effect, Schema } from "effect";
+import { Fragment } from "react/jsx-runtime";
 import { Link } from "waku";
 import { PageProps } from "waku/router";
 
@@ -126,17 +127,17 @@ export default async function AlbumPage({ id }: PageProps<"/album/[id]">) {
 
 							<div className="space-y-3">
 								<h1 className="text-4xl lg:text-5xl font-bold text-balance leading-tight">
-									{data.title}
+									{album.title}
 								</h1>
 								<h2 className="text-xl font-medium text-brand-orange">
 									{data.artists.map((artist, idx) => (
-										<>
+										<Fragment key={artist.name + idx}>
 											{/* @ts-ignore */}
 											<Link to={`#`} key={artist.name + idx}>
 												{idx !== 0 ? ", " : ""}
 												{artist.name}
 											</Link>
-										</>
+										</Fragment>
 									))}
 								</h2>
 							</div>
@@ -152,7 +153,7 @@ export default async function AlbumPage({ id }: PageProps<"/album/[id]">) {
 						<ul className="bg-white shadow-md rounded-2xl w-full divide-y divide-border overflow-hidden">
 							{album.songs.map((song, idx) => (
 								<SongRow
-									key={song.title}
+									key={song.id}
 									fileId={song.fileId}
 									title={song.title}
 									trackNumber={idx + 1}
