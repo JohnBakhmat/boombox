@@ -1,4 +1,3 @@
-
 import * as flac from "./flac";
 import { Effect, Option, Console } from "effect";
 import { FileSystem, Path } from "@effect/platform";
@@ -26,7 +25,10 @@ export function parseFile(path: string) {
 			}
 		}
 		return yield* Effect.fail(new Error("File is unsupported"));
-	}).pipe(Effect.withSpan("parseFile"));
+	}).pipe(
+		Effect.tap((x) => Console.log(`Finished reading ${x.filePath}`)),
+		Effect.withSpan("parseFile"),
+	);
 }
 
 export function parseManyFiles(paths: string[]) {

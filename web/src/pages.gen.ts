@@ -4,18 +4,18 @@
 import type { PathsForPages, GetConfigResponse } from 'waku/router';
 
 // prettier-ignore
-import type { getConfig as File_Index_getConfig } from './pages/index';
+import type { getConfig as File_About_getConfig } from './pages/about';
 // prettier-ignore
 import type { getConfig as File_AlbumId_getConfig } from './pages/album/[id]';
 // prettier-ignore
-import type { getConfig as File_About_getConfig } from './pages/about';
+import type { getConfig as File_Index_getConfig } from './pages/index';
 
 // prettier-ignore
 type Page =
-| ({ path: '/' } & GetConfigResponse<typeof File_Index_getConfig>)
-| { path: '/album'; render: 'dynamic' }
+| ({ path: '/about' } & GetConfigResponse<typeof File_About_getConfig>)
 | ({ path: '/album/[id]' } & GetConfigResponse<typeof File_AlbumId_getConfig>)
-| ({ path: '/about' } & GetConfigResponse<typeof File_About_getConfig>);
+| { path: '/album'; render: 'dynamic' }
+| ({ path: '/' } & GetConfigResponse<typeof File_Index_getConfig>);
 
 // prettier-ignore
 declare module 'waku/router' {
