@@ -179,3 +179,4 @@ db.sqlite-shm
 db.sqlite-wal
 
 test-data/
+opencodetmp/
