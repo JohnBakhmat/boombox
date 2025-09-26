@@ -179,7 +179,11 @@ export function startApi() {
 
 						// Set appropriate headers
 						set.headers["Content-Type"] = fileHandle.type || "application/octet-stream";
-						set.headers["Content-Disposition"] = `attachment; filename="${file.path.split("/").pop()}"`;
+
+						const filename = file.path.split("/").pop();
+						const encodedFilename = encodeURIComponent(filename ?? "");
+						set.headers["Content-Disposition"] =
+							`attachment; filename="${encodedFilename}"; filename*=UTF-8''${encodedFilename}`;
 
 						return fileHandle;
 

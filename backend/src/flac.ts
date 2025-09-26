@@ -87,12 +87,15 @@ const MetadataFromUint8Array = Schema.transformOrFail(
 
 					const { key, value } = parsedField;
 
-					switch (key) {
+					switch (key.toUpperCase()) {
 						case "ALBUM":
 							metadata.album = value;
 							break;
 						case "ARTIST":
 							metadata.artist = value;
+							break;
+						case "ALBUM ARTIST":
+							metadata.albumArtist = value ?? metadata.artist;
 							break;
 						case "TITLE":
 							metadata.title = value;
@@ -107,6 +110,8 @@ const MetadataFromUint8Array = Schema.transformOrFail(
 							continue;
 					}
 				}
+
+				metadata.albumArtist ??= metadata.artist;
 
 				const valid = Schema.decodeUnknownOption(MetadataSchema)(metadata);
 
@@ -210,8 +215,6 @@ export function readMetadata(path: string) {
 		}
 
 		offset += 4;
-
-		yield* Console.log(offset);
 
 		const vorbisComment = yield* readVorbisComment(file, offset, header.length);
 

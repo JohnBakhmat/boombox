@@ -1,5 +1,5 @@
 import * as flac from "./flac";
-import { Effect, Option, Console } from "effect";
+import { Effect, Option, Console, Duration } from "effect";
 import { FileSystem, Path } from "@effect/platform";
 
 const SUPPORTED_EXTENSIONS = ["flac"] as const;
@@ -7,6 +7,9 @@ type SupportedExtension = (typeof SUPPORTED_EXTENSIONS)[number];
 
 export function parseFile(path: string) {
 	return Effect.gen(function* () {
+		yield* Console.log(`Started reading ${path}`);
+		const start = Date.now();
+
 		const extension = path.split(".").pop();
 		const assumedType =
 			extension && SUPPORTED_EXTENSIONS.includes(extension as SupportedExtension)
@@ -21,12 +24,16 @@ export function parseFile(path: string) {
 			const isFlac = yield* flac.isFlac(path);
 			if (isFlac) {
 				const metadata = yield* flac.readMetadata(path);
+
+				const end = Date.now();
+				const elapsed = Duration.millis(end - start);
+				yield* Console.log(`----------Finished reading ${path} in ${Duration.toMillis(elapsed)}`);
 				return metadata;
 			}
 		}
 		return yield* Effect.fail(new Error("File is unsupported"));
 	}).pipe(
-		Effect.tap((x) => Console.log(`Finished reading ${x.filePath}`)),
+		Effect.tapError((e) => Console.error(e)),
 		Effect.withSpan("parseFile"),
 	);
 }

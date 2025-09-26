@@ -119,7 +119,7 @@ export function syncLibrary(libraryPath: string) {
 
 		const artistAlbumTasks = dirContent
 			.map((entry) => ({
-				artistId: artists.find((x) => x.name === entry.artist)?.id,
+				artistId: artists.find((x) => x.name === entry.albumArtist)?.id,
 				albumId: albums.find((x) => x.title === entry.album)?.id,
 			}))
 			.filter((x) => x.albumId && x.artistId)
