@@ -70,7 +70,7 @@ const MetadataFromUint8Array = Schema.transformOrFail(
 				const numberOfFields = dv.getUint32(cursor, true);
 				cursor += 4;
 
-				const metadata: Partial<Metadata> = {};
+				const metadata: Partial<Metadata & { artists: string[] }> = {};
 
 				for (let i = 0; i < numberOfFields; i++) {
 					const fieldLength = dv.getUint32(cursor, true);
@@ -92,10 +92,13 @@ const MetadataFromUint8Array = Schema.transformOrFail(
 							metadata.album = value;
 							break;
 						case "ARTIST":
-							metadata.artist = value;
+							if (!metadata.artists) {
+								metadata.artists = [];
+							}
+							metadata.artists.push(value);
 							break;
 						case "ALBUM ARTIST":
-							metadata.albumArtist = value ?? metadata.artist;
+							metadata.albumArtist = value;
 							break;
 						case "TITLE":
 							metadata.title = value;
@@ -111,7 +114,7 @@ const MetadataFromUint8Array = Schema.transformOrFail(
 					}
 				}
 
-				metadata.albumArtist ??= metadata.artist;
+				metadata.albumArtist ??= metadata.artists?.at(0);
 
 				const valid = Schema.decodeUnknownOption(MetadataSchema)(metadata);
 

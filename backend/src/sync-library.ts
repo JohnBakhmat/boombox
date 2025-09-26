@@ -24,7 +24,7 @@ export function syncLibrary(libraryPath: string) {
 
 		const newArtists = [
 			...dirContent.reduce((acc, cur) => {
-				acc.add(cur.artist);
+				cur.artists.forEach((a) => acc.add(a));
 				return acc;
 			}, new Set<string>()),
 		];
@@ -134,10 +134,12 @@ export function syncLibrary(libraryPath: string) {
 			);
 
 		const artistSongTasks = dirContent
-			.map((entry) => ({
-				artistId: artists.find((x) => x.name === entry.artist)?.id,
-				songId: songs.find((x) => x.title === entry.title)?.id,
-			}))
+			.flatMap((entry) =>
+				entry.artists.map((artist) => ({
+					artistId: artists.find((x) => x.name === artist)?.id,
+					songId: songs.find((x) => x.title === entry.title)?.id,
+				})),
+			)
 			.filter((x) => x.songId && x.artistId)
 			.map(({ songId, artistId }) =>
 				db
