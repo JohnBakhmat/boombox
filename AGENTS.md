@@ -24,3 +24,6 @@
 
 ## Repository Structure
 Monorepo with workspaces: `backend/`, `web/`, `shared/`. Use workspace references (`@boombox/shared`).
+
+## Cursor Rules
+- Use Bun instead of Node.js, npm, pnpm, or vite. Prefer `bun test`, `bun install`, `Bun.serve()`, etc.
