@@ -32,8 +32,8 @@ export function Controls() {
 					<Button
 						onClick={togglePlayPause}
 						size="icon"
-						variant="ghost"
-						className="aspect-square  border-2 border-black p-3"
+						variant="outline"
+						className="aspect-square  border-2 border-primary text-primary hover:text-primary p-3"
 					>
 						{isPlaying ? <Pause /> : <Play />}
 					</Button>
