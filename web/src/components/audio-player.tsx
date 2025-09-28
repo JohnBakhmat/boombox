@@ -5,7 +5,7 @@ import { fileAtom, isPlayingAtom, mainVolumeAtom } from "@/atoms";
 import { useAtomValue } from "jotai";
 import { Controls } from "./player/controls";
 
-export function AudioPlayer() {
+function usePlayer() {
 	const audioRef = useRef<HTMLAudioElement | null>(null);
 
 	const file = useAtomValue(fileAtom);
@@ -36,10 +36,19 @@ export function AudioPlayer() {
 		player.volume = mainVolume;
 	}, [audioRef, mainVolume]);
 
+	return {
+		ref: audioRef,
+		src: link,
+	};
+}
+
+export function AudioPlayer() {
+	const { ref, src } = usePlayer();
+
 	return (
 		<>
 			<Controls />
-			<audio ref={audioRef} src={link}></audio>
+			<audio ref={ref} src={src} controls></audio>
 		</>
 	);
 }
