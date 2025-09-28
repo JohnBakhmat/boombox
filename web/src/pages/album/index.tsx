@@ -2,7 +2,6 @@ import { AlbumCard } from "@/components/album-card";
 import { FetchFailedError, JsonParseError } from "@/lib/errors";
 import { Console, Effect, Schema } from "effect";
 
-
 const ArtistSchema = Schema.Struct({
 	id: Schema.NonEmptyString,
 	name: Schema.NonEmptyString,
