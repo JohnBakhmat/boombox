@@ -27,6 +27,9 @@ export function useControls({ maxVolume }: Props) {
 		volumePercent,
 		volumeReal: mainVolume,
 		setVolumePercent,
+
+		maxDurationMs: (12 * 60 + 47) * 1000,
+		curDurationMs: (0 * 60 + 0) * 1000,
 	};
 }
 

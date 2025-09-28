@@ -15,7 +15,7 @@ export default async function RootLayout({ children }: RootLayoutProps) {
 		<>
 			<meta name="description" content={data.description} />
 			<link rel="icon" type="image/png" href={data.icon} />
-			<div className="font-['Geist'] pb-36 min-w-screen max-w-screen overflow-x-hidden min-h-screen antialiased flex flex-col items-center h-auto">
+			<div className="font-['Geist'] pb-36 w-full overflow-x-hidden min-h-screen antialiased flex flex-col items-center h-auto">
 				<Providers>
 					<main className="">{children}</main>
 					<AudioPlayer />
