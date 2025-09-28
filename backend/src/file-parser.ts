@@ -1,9 +1,14 @@
 import * as flac from "./flac";
-import { Effect, Option, Console, Duration } from "effect";
+import { Effect, Option, Console, Duration, Data } from "effect";
 import { FileSystem, Path } from "@effect/platform";
 
 const SUPPORTED_EXTENSIONS = ["flac"] as const;
 type SupportedExtension = (typeof SUPPORTED_EXTENSIONS)[number];
+
+class UnsupportedFileError extends Data.TaggedError("UnsupportedFileError")<{
+	cause?: unknown;
+	message: string;
+}> {}
 
 export function parseFile(path: string) {
 	return Effect.gen(function* () {
@@ -17,7 +22,7 @@ export function parseFile(path: string) {
 				: null;
 
 		if (!assumedType) {
-			return yield* Effect.fail(new Error("File is unsupported"));
+			return yield* Effect.fail(new UnsupportedFileError({ message: "File is unsupported" }));
 		}
 
 		if (assumedType === "flac") {
@@ -31,9 +36,13 @@ export function parseFile(path: string) {
 				return metadata;
 			}
 		}
-		return yield* Effect.fail(new Error("File is unsupported"));
+		return yield* Effect.fail(new UnsupportedFileError({ message: "File is unsupported" }));
 	}).pipe(
-		Effect.tapError((e) => Console.error(e)),
+		Effect.tapError((e) => {
+			if (e._tag === "UnsupportedFileError") return Effect.succeed(null);
+
+			return Console.error(e);
+		}),
 		Effect.withSpan("parseFile"),
 	);
 }

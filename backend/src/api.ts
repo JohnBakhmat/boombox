@@ -183,7 +183,7 @@ export function startApi() {
 						const filename = file.path.split("/").pop();
 						const encodedFilename = encodeURIComponent(filename ?? "");
 						set.headers["Content-Disposition"] =
-							`attachment; filename="${encodedFilename}"; filename*=UTF-8''${encodedFilename}`;
+							`attachment; filename="${encodedFilename}"; filename*=UTF-8''${filename}`;
 
 						return fileHandle;
 
