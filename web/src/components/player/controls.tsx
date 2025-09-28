@@ -1,24 +1,14 @@
-import { useAtom, useAtomValue } from "jotai";
-import { fileAtom, isPlayingAtom, mainVolumeAtom } from "@/atoms";
-import { scale } from "@/utils";
+import { useAtomValue } from "jotai";
+import { fileAtom } from "@/atoms";
 
 import { Pause, Play } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
+import { useControls } from "./use-controls";
 
 export function Controls() {
 	const file = useAtomValue(fileAtom);
-	const [isPlaying, setIsPlaying] = useAtom(isPlayingAtom);
 
-	const [mainVolume, setMainVolume] = useAtom(mainVolumeAtom);
-	const volumePercent = volumeBackwards(mainVolume);
-
-	const togglePlayPause = () => {
-		setIsPlaying((x) => !x);
-	};
-
-	const setVolumePercent = (volume: number) => {
-		setMainVolume(volumeForward(volume));
-	};
+	const { togglePlayPause, isPlaying, volumeReal, volumePercent, setVolumePercent } = useControls({});
 
 	if (!file) {
 		return null;
@@ -44,48 +34,9 @@ export function Controls() {
 						className="max-w-[200px]"
 						onValueChange={([value]) => value && setVolumePercent(value)}
 					/>
-					<pre>{JSON.stringify({ mainVolume, volumePercent }, null, 2)}</pre>
+					<pre>{JSON.stringify({ volumePercent, volumeReal }, null, 2)}</pre>
 				</div>
 			</div>
 		</div>
 	);
-}
-
-const MAX_VOLUME = 0.15;
-
-function perceptualVolume(x: number) {
-	//return (Math.exp(x) - 1) / (Math.E - 1);
-	return (Math.exp(x) - 1) * 0.5819767; // 1/(e-1)
-}
-
-function amplitudeVolume(x: number) {
-	//return Math.log(x * (Math.E - 1) + 1);
-	return Math.log(x * 1.71828 + 1); // e-1
-}
-
-function clamp(x: number, min: number, max: number) {
-	if (x > max) {
-		return max;
-	}
-	if (x < min) {
-		return min;
-	}
-	return x;
-}
-
-function volumeForward(valuePercent: number) {
-	const clamped = clamp(valuePercent, 0, 100);
-	const normalized = scale(clamped, 100, 1);
-	const perceptual = perceptualVolume(normalized);
-	const scaled = scale(perceptual, 1, MAX_VOLUME);
-	const clamped2 = clamp(scaled, 0, MAX_VOLUME);
-	return clamped2;
-}
-function volumeBackwards(value: number) {
-	const clamped = clamp(value, 0, MAX_VOLUME);
-	const scaled = scale(clamped, MAX_VOLUME, 1);
-	const actual = amplitudeVolume(scaled);
-	const denormalized = scale(actual, 1, 100);
-	const clamped2 = clamp(denormalized, 0, 100);
-	return clamped2;
 }
