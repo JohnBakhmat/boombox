@@ -4,6 +4,7 @@ import { fileAtom } from "@/atoms";
 import { Pause, Play } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { useControls } from "./use-controls";
+import { Button } from "@/components/ui/button";
 
 export function Controls() {
 	const file = useAtomValue(fileAtom);
@@ -19,9 +20,14 @@ export function Controls() {
 			<div className="grid place-items-center grid-rows-1 grid-cols-[1fr_auto_1fr] gap-x-10 w-full">
 				<div></div>
 				<div>
-					<button onClick={togglePlayPause} className="aspect-square rounded-full  border-2 border-black p-3">
+					<Button
+						onClick={togglePlayPause}
+						size="icon"
+						variant="ghost"
+						className="aspect-square  border-2 border-black p-3"
+					>
 						{isPlaying ? <Pause /> : <Play />}
-					</button>
+					</Button>
 				</div>
 
 				{/* right */}
@@ -34,7 +40,9 @@ export function Controls() {
 						className="max-w-[200px]"
 						onValueChange={([value]) => value && setVolumePercent(value)}
 					/>
-					<pre>{JSON.stringify({ volumePercent, volumeReal }, null, 2)}</pre>
+					{/*
+					 *<pre>{JSON.stringify({ volumePercent, volumeReal }, null, 2)}</pre>
+					 */}
 				</div>
 			</div>
 		</div>
