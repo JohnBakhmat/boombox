@@ -177,13 +177,13 @@ export function startApi() {
 							);
 						}
 
-						// Set appropriate headers
-						set.headers["Content-Type"] = fileHandle.type || "application/octet-stream";
-
 						const filename = file.path.split("/").pop();
 						const encodedFilename = encodeURIComponent(filename ?? "");
+
 						set.headers["Content-Disposition"] =
-							`attachment; filename="${encodedFilename}"; filename*=UTF-8''${filename}`;
+							`attachment; filename="${encodedFilename}"; filename*=UTF-8''${encodedFilename}`;
+						set.headers["Content-Type"] = "audio/flac";
+						set.headers["Accept-Ranges"] = "bytes";
 
 						return fileHandle;
 

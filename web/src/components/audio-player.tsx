@@ -9,8 +9,6 @@ import { Slider } from "./ui/slider";
 
 import { scale } from "@/utils";
 
-const sampleFile = "http://localhost:3003/file/01994481-481d-7009-92c9-4a4ba6298844";
-
 export function AudioPlayer() {
 	const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -18,7 +16,7 @@ export function AudioPlayer() {
 	const isPlaying = useAtomValue(isPlayingAtom);
 	const mainVolume = useAtomValue(mainVolumeAtom);
 
-	const link = file ? `http://localhost:3003/file/${file}` : sampleFile;
+	const link = file ? `http://localhost:3003/file/${file}` : "";
 	const player = audioRef.current;
 
 	useEffect(() => {
