@@ -9,6 +9,7 @@ import { openapi } from "@elysiajs/openapi";
 import type { Album, AlbumWithArtist, Artist, Song } from "./db/types";
 import type { SqlError } from "@effect/sql";
 import { pipe } from "effect";
+import type { start } from "effect/ScheduleIntervals";
 
 class FileNotFoundError extends Data.TaggedError("FileNotFoundError")<{
 	message: string;
@@ -126,7 +127,7 @@ const ApiLive = Layer.effect(
 );
 
 export function startApi() {
-	new Elysia()
+	return new Elysia()
 		.use(openapi())
 		.get("/", "Hello Elysia")
 		.get("/albums", () =>
@@ -267,3 +268,5 @@ const layers = Layer.mergeAll(
 	Layer.provide(ApiLive, DatabaseLive.Default),
 );
 const runtime = ManagedRuntime.make(layers);
+
+export type ApiType = ReturnType<typeof startApi>;
