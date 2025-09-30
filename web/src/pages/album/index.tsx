@@ -16,20 +16,18 @@ const getAlbums = () => pipe(
 )
 
 const AlbumPage = () =>
-	Effect.runPromise(
-		Effect.gen(function* () {
-			const albums = yield* getAlbums();
+	Effect.gen(function* () {
+		const albums = yield* getAlbums();
 
-			return (
-				<div className="container">
-					<div className="grid lg:grid-cols-6 grid-cols-1">
-						{albums.map((album) => (
-							<AlbumCard album={album} key={album.id} />
-						))}
-					</div>
+		return (
+			<div className="container">
+				<div className="grid lg:grid-cols-6 grid-cols-1">
+					{albums.map((album) => (
+						<AlbumCard album={album} key={album.id} />
+					))}
 				</div>
-			);
-		}),
-	);
+			</div>
+		);
+	})
 
-export default AlbumPage;
+export default () => Effect.runPromise(AlbumPage());
