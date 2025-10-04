@@ -2,8 +2,8 @@
 	"$schema": "https://ui.shadcn.com/schema.json",
 	"style": "default",
 	"tailwind": {
-		"config": "tailwind.config.js",
-		"css": "styles/styles.css",
+		"config": "tailwind.config.ts",
+		"css": "src/styles.css",
 		"baseColor": "slate",
 		"cssVariables": true,
 		"prefix": ""
@@ -13,6 +13,8 @@
 	"aliases": {
 		"components": "@/components",
 		"utils": "@/lib/utils",
-		"ui": "@/components/ui"
+		"ui": "@/components/ui",
+		"lib": "@/lib",
+		"hooks": "@/hooks"
 	}
 }
