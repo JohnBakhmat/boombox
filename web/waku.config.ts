@@ -1,10 +1,9 @@
+import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "waku/config";
 import tsconfigPaths from "vite-tsconfig-paths";
 
-import UnoCSS from "unocss/vite";
-
 export default defineConfig({
 	vite: {
-		plugins: [UnoCSS(), tsconfigPaths()],
+		plugins: [tailwindcss(), tsconfigPaths()],
 	},
 });

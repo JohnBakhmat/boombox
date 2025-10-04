@@ -1,6 +1,4 @@
 import "../styles.css";
-import "virtual:uno.css";
-import "@unocss/reset/tailwind.css";
 
 import type { ReactNode } from "react";
 import { AudioPlayer } from "@/components/audio-player";
