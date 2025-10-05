@@ -28,6 +28,7 @@ class ApiService extends Context.Tag("ApiService")<
 	ApiService,
 	{
 		readonly getAlbumList: () => Effect.Effect<AlbumWithArtist[], SqlError.SqlError, DatabaseLive>;
+		readonly getAlbum2: (id: string) => Effect.Effect<any, SqlError.SqlError | AlbumNotFoundError, DatabaseLive>;
 		readonly getAlbum: (
 			id: string,
 		) => Effect.Effect<GetAlbum, SqlError.SqlError | AlbumNotFoundError, DatabaseLive>;
@@ -40,6 +41,18 @@ const ApiLive = Layer.effect(
 		const db = yield* DatabaseLive;
 
 		return {
+			getAlbum2: (id: string) =>
+				Effect.gen(function* () {
+					const rows = yield* db.query.albumTable.findMany({
+						//where: eq(albumTable.id, id),
+
+						with: {
+							songs: true,
+						},
+					});
+
+					return rows;
+				}),
 			getAlbum: (id: string) =>
 				Effect.gen(function* () {
 					const rows = yield* db
@@ -134,6 +147,14 @@ export function startApi() {
 			pipe(
 				ApiService,
 				Effect.andThen((x) => x.getAlbumList()),
+				runtime.runPromise,
+			),
+		)
+
+		.get("/album2/:id", ({ params: { id } }) =>
+			pipe(
+				ApiService,
+				Effect.andThen((x) => x.getAlbum2(id)),
 				runtime.runPromise,
 			),
 		)

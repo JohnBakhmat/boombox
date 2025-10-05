@@ -22,8 +22,23 @@ export const songTable = sqliteTable("song", {
 		.references(() => albumTable.id, { onDelete: "cascade" }),
 });
 
-export const fileToSongRelation = relations(songTable, ({ one }) => ({
-	file: one(fileTable),
+export const fileRelations = relations(fileTable, ({ one }) => ({
+	song: one(songTable, {
+		fields: [fileTable.id],
+		references: [songTable.fileId],
+	}),
+}));
+
+export const songRelations = relations(songTable, ({ one, many }) => ({
+	file: one(fileTable, {
+		fields: [songTable.fileId],
+		references: [fileTable.id],
+	}),
+	album: one(albumTable, {
+		fields: [songTable.albumId],
+		references: [albumTable.id],
+	}),
+	artists: many(songToArtistTable),
 }));
 
 export const artistTable = sqliteTable(
@@ -44,8 +59,14 @@ export const albumTable = sqliteTable(
 	(t) => [unique().on(t.title)],
 );
 
-export const albumToSongRelation = relations(albumTable, ({ one, many }) => ({
+export const artistRelations = relations(artistTable, ({ many }) => ({
+	songs: many(songToArtistTable),
+	albums: many(artistToAlbumTable),
+}));
+
+export const albumRelations = relations(albumTable, ({ many }) => ({
 	songs: many(songTable),
+	artists: many(artistToAlbumTable),
 }));
 
 export const songToArtistTable = sqliteTable(
@@ -73,3 +94,25 @@ export const artistToAlbumTable = sqliteTable(
 	},
 	(t) => [unique().on(t.artistId, t.albumId)],
 );
+
+export const songToArtistRelations = relations(songToArtistTable, ({ one }) => ({
+	song: one(songTable, {
+		fields: [songToArtistTable.songId],
+		references: [songTable.id],
+	}),
+	artist: one(artistTable, {
+		fields: [songToArtistTable.artistId],
+		references: [artistTable.id],
+	}),
+}));
+
+export const artistToAlbumRelations = relations(artistToAlbumTable, ({ one }) => ({
+	artist: one(artistTable, {
+		fields: [artistToAlbumTable.artistId],
+		references: [artistTable.id],
+	}),
+	album: one(albumTable, {
+		fields: [artistToAlbumTable.albumId],
+		references: [albumTable.id],
+	}),
+}));
