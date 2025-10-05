@@ -114,7 +114,7 @@ export default async function AlbumPage({ id }: PageProps<"/album/[id]">) {
 			const album = yield* fetchAlbum(id);
 
 			return (
-				<div className="grid grid-cols-1 lg:grid-cols-[1fr_4fr] max-w-6xl w-full gap-x-8 px-8 py-12">
+				<div className="grid grid-cols-1 lg:grid-cols-[1fr_4fr] max-w-6xl w-full gap-x-8 px-8 py-12 mx-auto">
 					{/* Left section*/}
 					<div className="relative">
 						<div className="flex flex-col gap-5 sticky top-12">

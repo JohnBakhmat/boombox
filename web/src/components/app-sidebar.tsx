@@ -42,7 +42,7 @@ const items = [
 ];
 export function AppSidebar() {
 	return (
-		<Sidebar className="min-w-[200px]" collapsible="none">
+		<Sidebar className="min-w-[200px] h-auto" collapsible="none">
 			<SidebarHeader />
 			<SidebarContent>
 				<SidebarGroup>

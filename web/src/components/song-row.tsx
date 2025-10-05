@@ -29,27 +29,27 @@ export function SongRow(props: Props) {
 			<button
 				onClick={handleClick}
 				data-is-current={isCurrent}
-				className="track-row-grid p-4 gap-(x-4 y-1) group transition-all duration-200 cursor-pointer hover:bg-muted data-[is-current=true]:bg-brand-orange-light w-full text-left"
+				className="track-row-grid p-4 gap-x-4 gap-y-1 group transition-all duration-200 cursor-pointer hover:bg-muted data-[is-current=true]:bg-primary-foreground w-full text-left"
 			>
 				<div
 					data-is-current={isCurrent}
-					className="data-[id-current=true]:text-brand-orange grid place-items-center h-full w-6 text-center"
+					className="data-[id-current=true]:text-primary grid place-items-center h-full w-6 text-center"
 					style={{ gridArea: "number" }}
 				>
 					<div className="w-4 h-4 group-hover:hidden grid place-items-center">
 						{isPaused ? (
-							<Pause className="w-4 h-4 text-brand-orange" />
+							<Pause className="w-4 h-4 text-primary" />
 						) : isCurrent ? (
-							<AudioLines className="w-4 h-4 text-brand-orange" />
+							<AudioLines className="w-4 h-4 text-primary animate-pulse" />
 						) : (
 							<>
 								<span>{props.trackNumber}</span>
 							</>
 						)}
 					</div>
-					<Play className="w-4 h-4 text-brand-orange hidden group-hover:block" />
+					<Play className="w-4 h-4 text-primary hidden group-hover:block" />
 				</div>
-				<span data-id-current={isCurrent} className="font-semibold data-[id-current=true]:text-brand-orange">
+				<span data-id-current={isCurrent} className="font-semibold data-[id-current=true]:text-primary">
 					{props.title}
 				</span>
 				<span className="text-sm">{props.artists.map((a) => a.name).join(", ")}</span>
