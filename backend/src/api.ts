@@ -22,7 +22,10 @@ class AlbumNotFoundError extends Data.TaggedError("AlbumNotFoundError")<{
 
 type SongWithArtists = Song & { artists: Artist[] };
 
-type GetAlbum = Album & { songs: Array<Omit<SongWithArtists, "albumId">> };
+type GetAlbum = Album & {
+	artists: Artist[];
+	songs: Array<Omit<SongWithArtists, "albumId">>;
+};
 
 class ApiService extends Context.Tag("ApiService")<
 	ApiService,
@@ -41,19 +44,54 @@ const ApiLive = Layer.effect(
 		const db = yield* DatabaseLive;
 
 		return {
-			getAlbum2: (id: string) =>
-				Effect.gen(function* () {
-					const rows = yield* db.query.albumTable.findMany({
-						//where: eq(albumTable.id, id),
-
-						with: {
-							songs: true,
-						},
-					});
-
-					return rows;
-				}),
 			getAlbum: (id: string) =>
+				Effect.gen(function* () {
+					const album = yield* db.query.albumTable
+						.findMany({
+							where: eq(albumTable.id, id),
+							limit: 1,
+							with: {
+								artists: {
+									with: {
+										artist: true,
+									},
+								},
+								songs: {
+									with: {
+										artists: {
+											with: {
+												artist: true,
+											},
+										},
+									},
+								},
+							},
+						})
+						.pipe(
+							Effect.map((x) => x.at(0)),
+							Effect.flatMap(Effect.fromNullable),
+							Effect.mapError(
+								(e) =>
+									new AlbumNotFoundError({
+										message: "Album not found",
+										cause: e,
+									}),
+							),
+						);
+
+					const artists = album.artists.map((a) => a.artist);
+					const songs = album.songs.map((s) => ({
+						...s,
+						artists: s.artists.map((a) => a.artist),
+					}));
+
+					return {
+						...album,
+						artists,
+						songs,
+					};
+				}),
+			getAlbum2: (id: string) =>
 				Effect.gen(function* () {
 					const rows = yield* db
 						.select({

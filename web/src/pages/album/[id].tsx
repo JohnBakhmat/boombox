@@ -1,6 +1,7 @@
 import { SongRow } from "@/components/song-row";
+import { client } from "@/lib/api";
 import { FetchFailedError, JsonParseError } from "@/lib/errors";
-import { Console, Effect, Schema } from "effect";
+import { Console, Effect, pipe, Schema } from "effect";
 import { Fragment } from "react/jsx-runtime";
 import { Link } from "waku";
 import { PageProps } from "waku/router";
@@ -81,30 +82,19 @@ const AlbumSchema = Schema.Struct({
 	songs: Schema.Array(SongSchema),
 });
 
-function fetchAlbum(id: string) {
-	return Effect.gen(function* () {
-		const request = yield* Effect.tryPromise({
-			try: () => fetch(`http://localhost:3003/album/${id}`),
+const fetchAlbum = (id: string) =>
+	pipe(
+		Effect.tryPromise({
+			try: () => client.album({ id }).get(),
 			catch: (err) =>
 				new FetchFailedError({
 					cause: err,
 					message: "Failed to fetch album",
 				}),
-		});
-
-		const json = yield* Effect.tryPromise({
-			try: () => request.json().then((x) => x as unknown),
-			catch: (err) =>
-				new JsonParseError({
-					cause: err,
-					message: "Failed to parse json",
-				}),
-		});
-
-		const parsed = yield* Schema.decodeUnknown(AlbumSchema)(json);
-		return parsed;
-	}).pipe(Effect.tapError((err) => Console.error(err)));
-}
+		}),
+		Effect.map((x) => x.data),
+		Effect.flatMap(Effect.fromNullable),
+	);
 
 export default async function AlbumPage({ id }: PageProps<"/album/[id]">) {
 	return await Effect.runPromise(
@@ -130,10 +120,10 @@ export default async function AlbumPage({ id }: PageProps<"/album/[id]">) {
 									{album.title}
 								</h1>
 								<h2 className="text-xl font-medium text-primary">
-									{data.artists.map((artist, idx) => (
-										<Fragment key={artist.name + idx}>
+									{album.artists.map((artist, idx) => (
+										<Fragment key={artist.id}>
 											{/* @ts-ignore */}
-											<Link to={`#`} key={artist.name + idx}>
+											<Link to={`#`}>
 												{idx !== 0 ? ", " : ""}
 												{artist.name}
 											</Link>
