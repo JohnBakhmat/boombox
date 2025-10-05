@@ -129,7 +129,7 @@ export default async function AlbumPage({ id }: PageProps<"/album/[id]">) {
 								<h1 className="text-4xl lg:text-5xl font-bold text-balance leading-tight">
 									{album.title}
 								</h1>
-								<h2 className="text-xl font-medium text-brand-orange">
+								<h2 className="text-xl font-medium text-primary">
 									{data.artists.map((artist, idx) => (
 										<Fragment key={artist.name + idx}>
 											{/* @ts-ignore */}
