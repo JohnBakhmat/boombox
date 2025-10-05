@@ -31,7 +31,6 @@ class ApiService extends Context.Tag("ApiService")<
 	ApiService,
 	{
 		readonly getAlbumList: () => Effect.Effect<AlbumWithArtist[], SqlError.SqlError, DatabaseLive>;
-		readonly getAlbum2: (id: string) => Effect.Effect<any, SqlError.SqlError | AlbumNotFoundError, DatabaseLive>;
 		readonly getAlbum: (
 			id: string,
 		) => Effect.Effect<GetAlbum, SqlError.SqlError | AlbumNotFoundError, DatabaseLive>;
@@ -91,87 +90,22 @@ const ApiLive = Layer.effect(
 						songs,
 					};
 				}),
-			getAlbum2: (id: string) =>
-				Effect.gen(function* () {
-					const rows = yield* db
-						.select({
-							album: albumTable,
-							song: {
-								id: songTable.id,
-								fileId: songTable.fileId,
-								title: songTable.title,
-							},
-							artist: artistTable,
-						})
-						.from(albumTable)
-						.innerJoin(songTable, eq(songTable.albumId, albumTable.id))
-						.innerJoin(songToArtistTable, eq(songToArtistTable.songId, songTable.id))
-						.innerJoin(artistTable, eq(songToArtistTable.artistId, artistTable.id))
-						.where(eq(albumTable.id, id));
-
-					yield* Console.table(rows);
-
-					const firstRow = rows.at(0);
-					if (!firstRow) {
-						return yield* new AlbumNotFoundError({
-							message: "Can't extract album from selected rows",
-							cause: rows,
-						});
-					}
-
-					const songsMap = rows.reduce<Record<string, Omit<SongWithArtists, "albumId">>>((acc, row) => {
-						const { song, artist } = row;
-
-						if (!acc[song.id]) {
-							acc[song.id] = {
-								id: song.id,
-								fileId: song.fileId,
-								title: song.title,
-								artists: [] as Artist[],
-							};
-						}
-
-						if (artist) {
-							acc[song.id].artists.push(artist);
-						}
-
-						return acc;
-					}, {});
-
-					const album = {
-						id: firstRow.album.id,
-						title: firstRow.album.title,
-						songs: Object.values(songsMap),
-					};
-
-					return album;
-				}),
 			getAlbumList: () =>
 				Effect.gen(function* () {
-					const rows = yield* db
-						.select({
-							album: albumTable,
-							artist: artistTable,
-						})
-						.from(albumTable)
-						.innerJoin(artistToAlbumTable, eq(albumTable.id, artistToAlbumTable.albumId))
-						.innerJoin(artistTable, eq(artistTable.id, artistToAlbumTable.artistId));
+					const rows = yield* db.query.albumTable.findMany({
+						with: {
+							artists: {
+								with: {
+									artist: true,
+								},
+							},
+						},
+					});
 
-					const result = rows.reduce<Record<string, AlbumWithArtist>>((acc, cur) => {
-						const albumId = cur.album.id;
-
-						if (!acc[albumId]) {
-							acc[albumId] = {
-								...cur.album,
-								artists: [],
-							};
-						}
-
-						acc[albumId]?.artists.push(cur.artist);
-						return acc;
-					}, {});
-
-					return Object.values(result);
+					return rows.map((r) => ({
+						...r,
+						artists: r.artists.map((a) => a.artist),
+					}));
 				}),
 		};
 	}),
