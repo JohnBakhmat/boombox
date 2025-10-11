@@ -1,0 +1,19 @@
+meta {
+  name: get-cover-from-musicbrainz
+  type: http
+  seq: 5
+}
+
+get {
+  url: http://coverartarchive.org/release-group/:rgid/front
+  body: none
+  auth: inherit
+}
+
+params:path {
+  rgid: 
+}
+
+settings {
+  encodeUrl: true
+}
