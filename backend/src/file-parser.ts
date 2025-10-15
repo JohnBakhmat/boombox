@@ -1,5 +1,5 @@
 import * as flac from "./flac";
-import { Effect, Option, Console, Duration, Data } from "effect";
+import { Effect, Option, Console, Duration, Data, Stream } from "effect";
 import { FileSystem, Path } from "@effect/platform";
 
 const SUPPORTED_EXTENSIONS = ["flac"] as const;
@@ -9,6 +9,8 @@ class UnsupportedFileError extends Data.TaggedError("UnsupportedFileError")<{
 	cause?: unknown;
 	message: string;
 }> {}
+
+const supportedExtensions = [".flac"] as const;
 
 export function parseFile(path: string) {
 	return Effect.gen(function* () {
@@ -82,4 +84,31 @@ export function readDirectory(dirPath: string, skip: string[] = []) {
 
 		return yield* parseManyFiles(filtered);
 	}).pipe(Effect.withSpan("readDirectory"));
+}
+
+export function readDirectoryStream(dirPath: string, skip: string[] = []) {
+	return Effect.gen(function* () {
+		const fs = yield* FileSystem.FileSystem;
+		const path = yield* Path.Path;
+
+		const files = yield* fs.readDirectory(dirPath, {
+			recursive: true,
+		});
+
+		const stream = Stream.fromIterable(files).pipe(
+			Stream.map((file) => path.resolve(dirPath, file)),
+			Stream.tap((relative) => Console.debug("RELATIVE", relative)),
+
+			Stream.filter((file) => supportedExtensions.some((ext) => file.endsWith(ext)) === false),
+			Stream.filter((file) => skip.includes(file) === false),
+			Stream.tap((filtered) => Console.debug("FILTERED", filtered)),
+
+			Stream.mapEffect((file) => parseFile(file), {
+				concurrency: 10,
+			}),
+			Stream.catchAll((err) => Stream.empty),
+		);
+
+		return stream;
+	}).pipe(Effect.withSpan("readDirectoryStream"));
 }
