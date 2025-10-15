@@ -72,6 +72,8 @@ export function readDirectory(dirPath: string, skip: string[] = []) {
 			recursive: true,
 		});
 
+		yield* Console.log(files);
+
 		const relative = files.map((file) => path.resolve(dirPath, file));
 		yield* Console.log(relative);
 
@@ -95,11 +97,13 @@ export function readDirectoryStream(dirPath: string, skip: string[] = []) {
 			recursive: true,
 		});
 
+		yield* Console.log(files);
+
 		const stream = Stream.fromIterable(files).pipe(
 			Stream.map((file) => path.resolve(dirPath, file)),
 			Stream.tap((relative) => Console.debug("RELATIVE", relative)),
 
-			Stream.filter((file) => supportedExtensions.some((ext) => file.endsWith(ext)) === false),
+			Stream.filter((file) => supportedExtensions.some((ext) => file.endsWith(ext)) === true),
 			Stream.filter((file) => skip.includes(file) === false),
 			Stream.tap((filtered) => Console.debug("FILTERED", filtered)),
 

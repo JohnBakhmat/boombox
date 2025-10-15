@@ -25,7 +25,7 @@ function printMemorySnapshots(
 	return Effect.gen(function* () {
 		yield* Console.log(`=== MEMORY SNAPSHOTS BY ITERATION ${iteration} ===`);
 
-		const fileName = `./benchmark/mem-snapshots-${iteration}-${Date.now()}.txt`;
+		const fileName = `./benchmark-stream/mem-snapshots-${iteration}-${Date.now()}.txt`;
 
 		const file = Bun.file(fileName);
 		const writer = file.writer();
