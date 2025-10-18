@@ -13,6 +13,7 @@
 		"@types/bun": "^1.2.21",
 		"@vitest/coverage-v8": "3.2.4",
 		"drizzle-kit": "^0.31.4",
+		"jest-image-snapshot": "^6.5.1",
 		"oxlint": "^1.14.0",
 		"vitest": "^3.2.4"
 	},
