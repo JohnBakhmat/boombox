@@ -140,16 +140,31 @@ function parseFieldValue(str: string): { key: string; value: string } | null {
 	return { key: key.toUpperCase(), value };
 }
 
-function readHeader(file: Uint8Array, offset: number) {
-	return Effect.gen(function* () {
-		const header = yield* Schema.decode(FlacHeaderFromUint8Array)({
-			uint8Array: file,
-			offset: offset,
-		});
+//function readHeader(file: Uint8Array, offset: number) {
+//return Effect.gen(function* () {
+//const header = yield* Schema.decode(FlacHeaderFromUint8Array)({
+//uint8Array: file,
+//offset: offset,
+//});
 
-		return header;
+//return header;
+//}).pipe(
+//Effect.withSpan("flac-readHeader"),
+//Effect.mapError(
+//(e) =>
+//new FlacError({
+//cause: e,
+//message: "Failed reading header",
+//}),
+//),
+//);
+//}
+
+const readHeader = Effect.fn("flac-readHeader")(function* (file: Uint8Array, offset: number) {
+	const result = yield* Schema.decode(FlacHeaderFromUint8Array)({
+		uint8Array: file,
+		offset: offset,
 	}).pipe(
-		Effect.withSpan("flac-readHeader"),
 		Effect.mapError(
 			(e) =>
 				new FlacError({
@@ -158,19 +173,17 @@ function readHeader(file: Uint8Array, offset: number) {
 				}),
 		),
 	);
-}
 
-function readVorbisComment(file: Uint8Array, offset: number, length: number) {
-	return Effect.gen(function* () {
-		const slice = file.slice(offset, offset + length);
+	return result;
+});
 
-		const vorbisComment = yield* Schema.decode(MetadataFromUint8Array)({
-			uint8Array: slice,
-			offset,
-			length,
-		});
+const readVorbisComment = Effect.fn("readVorbisComment")(function* (file: Uint8Array, offset: number, length: number) {
+	const slice = file.slice(offset, offset + length);
 
-		return vorbisComment;
+	const vorbisComment = yield* Schema.decode(MetadataFromUint8Array)({
+		uint8Array: slice,
+		offset,
+		length,
 	}).pipe(
 		Effect.mapError(
 			(e) =>
@@ -179,53 +192,50 @@ function readVorbisComment(file: Uint8Array, offset: number, length: number) {
 					message: "Failed to parse Vorbis Comment",
 				}),
 		),
-
-		Effect.withSpan("readVorbisComment"),
 	);
-}
+
+	return vorbisComment;
+});
 
 // Public API
-export function isFlac(path: string) {
-	return Effect.gen(function* () {
-		const fs = yield* FileSystem.FileSystem;
-		const file = yield* fs.readFile(path);
-		const slice = file.slice(0, 4).toString();
-		return slice === "fLaC";
-	}).pipe(Effect.withSpan("isFlac"));
-}
 
-export function readMetadata(path: string) {
-	return Effect.gen(function* () {
-		const fs = yield* FileSystem.FileSystem;
+export const isFlac = Effect.fn("isFlac")(function* (path: string) {
+	const fs = yield* FileSystem.FileSystem;
+	const file = yield* fs.readFile(path);
+	const slice = file.slice(0, 4).toString();
+	return slice === "fLaC";
+});
 
-		const fileIsFlac = yield* isFlac(path);
-		if (!fileIsFlac) {
-			return yield* Effect.fail(
-				new FlacError({
-					message: "The file you are trying to parse as FLAC is NOT FLAC",
-				}),
-			);
-		}
+export const readMetadata = Effect.fn("flac-readMetadata")(function* (path: string) {
+	const fs = yield* FileSystem.FileSystem;
 
-		const file = yield* fs.readFile(path);
+	const fileIsFlac = yield* isFlac(path);
+	if (!fileIsFlac) {
+		return yield* Effect.fail(
+			new FlacError({
+				message: "The file you are trying to parse as FLAC is NOT FLAC",
+			}),
+		);
+	}
 
-		let offset = 4;
-		let header = yield* readHeader(file, offset);
+	const file = yield* fs.readFile(path);
 
-		while (!header.isLast && header.streamInfo !== VORBIS_STREAMINFO) {
-			offset = offset + 4 + header.length;
-			header = yield* readHeader(file, offset);
-		}
+	let offset = 4;
+	let header = yield* readHeader(file, offset);
 
-		offset += 4;
+	while (!header.isLast && header.streamInfo !== VORBIS_STREAMINFO) {
+		offset = offset + 4 + header.length;
+		header = yield* readHeader(file, offset);
+	}
 
-		const vorbisComment = yield* readVorbisComment(file, offset, header.length);
+	offset += 4;
 
-		const result = MetadataWithFilepathSchema.make({
-			...vorbisComment,
-			filePath: path,
-		});
+	const vorbisComment = yield* readVorbisComment(file, offset, header.length);
 
-		return result;
-	}).pipe(Effect.withSpan("flac-readMetadata"));
-}
+	const result = MetadataWithFilepathSchema.make({
+		...vorbisComment,
+		filePath: path,
+	});
+
+	return result;
+});
