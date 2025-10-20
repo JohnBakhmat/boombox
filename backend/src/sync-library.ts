@@ -1,158 +1,231 @@
-import { Console, Effect } from "effect";
+import { Effect, Stream, Chunk, Console } from "effect";
 import { DatabaseLive } from "./db";
-import { readDirectory } from "./file-parser";
+import { readDirectoryStream } from "./file-parser";
 
 import { albumTable, artistTable, artistToAlbumTable, fileTable, songTable, songToArtistTable } from "./db/schema";
-import { inArray } from "drizzle-orm";
+import type { MetadataWithFilepathSchema } from "./metadata";
+import { colors } from "./chalk";
 
-export function syncLibrary(libraryPath: string) {
-	return Effect.gen(function* () {
-		const db = yield* DatabaseLive;
+export const syncLibraryStream = Effect.fn("sync-library-stream")(function* (libraryPath: string) {
+	const db = yield* DatabaseLive;
 
-		const alreadyIndexed = yield* db.query.fileTable.findMany();
+	//TODO: reaindex old files / updated files
+	const alreadyIndexed = yield* db.query.fileTable.findMany();
 
-		const dirContent = yield* readDirectory(
-			libraryPath,
-			alreadyIndexed.map((x) => x.path),
-		);
+	const stream = yield* readDirectoryStream(
+		libraryPath,
+		alreadyIndexed.map((x) => x.path),
+	);
 
-		if (dirContent.length === 0) {
-			return;
-		}
+	yield* stream.pipe(
+		Stream.tap((x) =>
+			Console.log(
+				"Found",
+				colors.FgGreen,
+				x.title,
+				colors.Reset,
+				"by",
+				colors.FgYellow,
+				x.artists.join(","),
+				colors.Reset,
+			),
+		),
+		Stream.grouped(10),
+		//Stream.schedule(Schedule.spaced("3 second")),
+		Stream.mapEffect(saveChunk, { concurrency: 5 }),
+		Stream.runDrain,
+	);
+});
 
-		yield* Console.table(dirContent);
+type Metadata = typeof MetadataWithFilepathSchema.Type;
 
-		const newArtists = [
-			...dirContent.reduce((acc, cur) => {
-				cur.artists.forEach((a) => acc.add(a));
-				return acc;
-			}, new Set<string>()),
-		];
+const saveChunk = Effect.fn("save-chunk")(function* (chunk: Chunk.Chunk<Metadata>) {
+	const [files, artists, albums] = yield* Effect.all(
+		[createFiles(chunk), createArtists(chunk), createAlbums(chunk)],
+		{ concurrency: 3 },
+	);
 
-		const newAlbums = [
-			...dirContent.reduce((acc, cur) => {
-				acc.add(cur.album);
-				return acc;
-			}, new Set<string>()),
-		];
+	const songs = yield* createSongs(chunk, { files, albums });
 
-		const newFiles = dirContent.map((entry) => ({
-			path: entry.filePath,
-		}));
+	yield* Effect.all(
+		[
+			connectArtistToSong(chunk, {
+				songs,
+				artists,
+			}),
+			connectArtistAlbum(chunk, {
+				artists,
+				albums,
+			}),
+		],
+		{ concurrency: 2 },
+	);
 
-		yield* db.insert(fileTable).values(newFiles).onConflictDoNothing();
+	return {
+		songCount: songs.length,
+		artistCount: artists.length,
+		albumCount: albums.length,
+	};
+});
 
-		const files = yield* db
-			.select({
-				id: fileTable.id,
-				filePath: fileTable.path,
-			})
-			.from(fileTable)
-			.where(
-				inArray(
-					fileTable.path,
-					newFiles.map((f) => f.path),
-				),
-			);
+const connectArtistToSong = Effect.fn("connect-artist-song")(function* (
+	chunk: Chunk.Chunk<Metadata>,
 
-		yield* Console.log(newArtists);
+	lookup: {
+		songs: Effect.Effect.Success<ReturnType<typeof createSongs>>;
+		artists: Effect.Effect.Success<ReturnType<typeof createArtists>>;
+	},
+) {
+	const db = yield* DatabaseLive;
+	const newSongArtist = Chunk.toArray(chunk)
+		.flatMap((entry) =>
+			entry.artists.map((artist) => ({
+				artistId: lookup.artists.find((x) => x.name === artist)?.id ?? "",
+				songId: lookup.songs.find((x) => x.title === entry.title)?.id ?? "",
+			})),
+		)
+		.filter((x) => x.songId && x.artistId);
 
-		yield* Effect.all(
-			[
-				db
-					.insert(artistTable)
-					.values(newArtists.map((a) => ({ name: a })))
-					.onConflictDoNothing(),
-				db
-					.insert(albumTable)
-					.values(newAlbums.map((a) => ({ title: a })))
-					.onConflictDoNothing(),
-				db.insert(fileTable).values(newFiles).onConflictDoNothing(),
-			],
-			{ concurrency: "unbounded" },
-		);
+	if (!newSongArtist) {
+		return;
+	}
 
-		const [artists, albums] = yield* Effect.all(
-			[
-				db
-					.select({
-						id: artistTable.id,
-						name: artistTable.name,
-					})
-					.from(artistTable)
-					.where(inArray(artistTable.name, newArtists)),
-				db
-					.select({
-						id: albumTable.id,
-						title: albumTable.title,
-					})
-					.from(albumTable)
-					.where(inArray(albumTable.title, newAlbums)),
-			],
-			{
-				concurrency: "unbounded",
-			},
-		);
+	yield* db.insert(songToArtistTable).values(newSongArtist).onConflictDoNothing();
+});
 
-		const newSongs = dirContent.map((entry) => ({
-			title: entry.title,
-			trackNumber: entry.trackNumber,
-			fileId: files.find((file) => file.filePath === entry.filePath)?.id!,
-			albumId: albums.find((album) => album.title === entry.album)?.id!,
-		}));
-		yield* db.insert(songTable).values(newSongs).onConflictDoNothing();
+const connectArtistAlbum = Effect.fn("connect-album-artist")(function* (
+	chunk: Chunk.Chunk<Metadata>,
 
-		const songs = yield* db
-			.select({
-				id: songTable.id,
-				title: songTable.title,
-			})
-			.from(songTable)
-			.where(
-				inArray(
-					songTable.title,
-					newSongs.map((x) => x.title),
-				),
-			);
+	lookup: {
+		albums: Effect.Effect.Success<ReturnType<typeof createAlbums>>;
+		artists: Effect.Effect.Success<ReturnType<typeof createArtists>>;
+	},
+) {
+	const db = yield* DatabaseLive;
+	const newAlbumArtists = Chunk.toArray(chunk)
+		.map((entry) => ({
+			artistId: lookup.artists.find((x) => x.name === entry.albumArtist)?.id ?? "",
+			albumId: lookup.albums.find((x) => x.title === entry.album)?.id ?? "",
+		}))
+		.filter((x) => x.albumId && x.artistId);
 
-		yield* Console.log(artists, albums, songs, files);
+	if (!newAlbumArtists.length) {
+		return;
+	}
 
-		const artistAlbumTasks = dirContent
-			.map((entry) => ({
-				artistId: artists.find((x) => x.name === entry.albumArtist)?.id,
-				albumId: albums.find((x) => x.title === entry.album)?.id,
-			}))
-			.filter((x) => x.albumId && x.artistId)
-			.map(({ artistId, albumId }) =>
-				db
-					.insert(artistToAlbumTable)
-					.values({
-						artistId: artistId!,
-						albumId: albumId!,
-					})
-					.onConflictDoNothing(),
-			);
+	yield* db.insert(artistToAlbumTable).values(newAlbumArtists).onConflictDoNothing();
+});
 
-		const artistSongTasks = dirContent
-			.flatMap((entry) =>
-				entry.artists.map((artist) => ({
-					artistId: artists.find((x) => x.name === artist)?.id,
-					songId: songs.find((x) => x.title === entry.title)?.id,
-				})),
-			)
-			.filter((x) => x.songId && x.artistId)
-			.map(({ songId, artistId }) =>
-				db
-					.insert(songToArtistTable)
-					.values({
-						songId: songId!,
-						artistId: artistId!,
-					})
-					.onConflictDoNothing(),
-			);
+const createSongs = Effect.fn("create-songs")(function* (
+	chunk: Chunk.Chunk<Metadata>,
+	lookup: {
+		files: Effect.Effect.Success<ReturnType<typeof createFiles>>;
+		albums: Effect.Effect.Success<ReturnType<typeof createAlbums>>;
+	},
+) {
+	const db = yield* DatabaseLive;
 
-		yield* Effect.all([artistAlbumTasks, artistSongTasks].flat(), {
-			concurrency: "unbounded",
-		});
-	}).pipe(Effect.withSpan("syncLibrary"));
+	const newSongs = Chunk.toArray(chunk).map((x) => ({
+		title: x.title,
+		fileId: lookup.files.find((file) => file.filePath === x.filePath)?.id!,
+		albumId: lookup.albums.find((album) => album.title === x.album)?.id!,
+	}));
+
+	if (!newSongs.length) {
+		return [];
+	}
+
+	yield* db.insert(songTable).values(newSongs).onConflictDoNothing();
+
+	return yield* db
+		.select({
+			id: songTable.id,
+			title: songTable.title,
+		})
+		.from(songTable);
+});
+
+const createFiles = Effect.fn("create-files")(function* (chunk: Chunk.Chunk<Metadata>) {
+	const db = yield* DatabaseLive;
+
+	const newFiles = chunkToUniqueArray(chunk, (x) => x.filePath).map((x) => ({
+		path: x,
+	}));
+
+	if (!newFiles.length) {
+		return [];
+	}
+
+	yield* db.insert(fileTable).values(newFiles).onConflictDoNothing();
+
+	return yield* db
+		.select({
+			id: fileTable.id,
+			filePath: fileTable.path,
+		})
+		.from(fileTable);
+});
+
+const createArtists = Effect.fn("create-artists")(function* (chunk: Chunk.Chunk<Metadata>) {
+	const db = yield* DatabaseLive;
+
+	const newArtists = chunkToUniqueArray(chunk, (x) => x.artists);
+
+	if (!newArtists.length) {
+		return [];
+	}
+
+	yield* db
+		.insert(artistTable)
+		.values(
+			newArtists.map((x) => ({
+				name: x,
+			})),
+		)
+		.onConflictDoNothing()
+		.returning();
+
+	return yield* db
+		.select({
+			id: artistTable.id,
+			name: artistTable.name,
+		})
+		.from(artistTable);
+});
+
+const createAlbums = Effect.fn("create-albums")(function* (chunk: Chunk.Chunk<Metadata>) {
+	const db = yield* DatabaseLive;
+
+	const newAlbums = chunkToUniqueArray(chunk, (x) => x.album);
+
+	if (!newAlbums.length) {
+		return [];
+	}
+
+	yield* db
+		.insert(albumTable)
+		.values(
+			newAlbums.map((x) => ({
+				title: x,
+			})),
+		)
+		.onConflictDoNothing()
+		.returning();
+
+	return yield* db
+		.select({
+			id: albumTable.id,
+			title: albumTable.title,
+		})
+		.from(albumTable);
+});
+
+function chunkToUniqueArray<T extends object, U extends string | readonly string[]>(
+	chunk: Chunk.Chunk<T>,
+	map: (x: T) => U,
+) {
+	const array = Chunk.toArray(chunk);
+	const x = array.flatMap(map);
+	const set = new Set(x);
+	return Array.from(set);
 }

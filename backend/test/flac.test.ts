@@ -1,7 +1,7 @@
 import { expect, it as test } from "@effect/vitest";
 import { Effect } from "effect/index";
-import { isFlac, readMetadata, } from "../src/flac";
-import { BunContext, } from "@effect/platform-bun/index";
+import { isFlac, readMetadata } from "../src/flac";
+import { BunContext } from "@effect/platform-bun/index";
 
 const provide = Effect.provide(BunContext.layer);
 

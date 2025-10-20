@@ -14,9 +14,6 @@ const supportedExtensions = [".flac"] as const;
 
 export function parseFile(path: string) {
 	return Effect.gen(function* () {
-		yield* Console.log(`Started reading ${path}`);
-		const start = Date.now();
-
 		const extension = path.split(".").pop();
 		const assumedType =
 			extension && SUPPORTED_EXTENSIONS.includes(extension as SupportedExtension)
@@ -32,9 +29,6 @@ export function parseFile(path: string) {
 			if (isFlac) {
 				const metadata = yield* flac.readMetadata(path);
 
-				const end = Date.now();
-				const elapsed = Duration.millis(end - start);
-				yield* Console.log(`----------Finished reading ${path} in ${Duration.toMillis(elapsed)}`);
 				return metadata;
 			}
 		}
@@ -101,12 +95,8 @@ export function readDirectoryStream(dirPath: string, skip: string[] = []) {
 
 		const stream = Stream.fromIterable(files).pipe(
 			Stream.map((file) => path.resolve(dirPath, file)),
-			Stream.tap((relative) => Console.debug("RELATIVE", relative)),
-
 			Stream.filter((file) => supportedExtensions.some((ext) => file.endsWith(ext)) === true),
 			Stream.filter((file) => skip.includes(file) === false),
-			Stream.tap((filtered) => Console.debug("FILTERED", filtered)),
-
 			Stream.mapEffect((file) => parseFile(file), {
 				concurrency: 10,
 			}),

@@ -20,7 +20,7 @@ function printMemorySnapshot(timestamp: number, heapUsed: number, heapMax: numbe
 
 function printMemorySnapshots(
 	iteration: number,
-	memorySnapshots: Array<{ timestamp: number; rss: number; heapUsed: number }>
+	memorySnapshots: Array<{ timestamp: number; rss: number; heapUsed: number }>,
 ) {
 	return Effect.gen(function* () {
 		yield* Console.log(`=== MEMORY SNAPSHOTS BY ITERATION ${iteration} ===`);
@@ -74,13 +74,13 @@ const iteration = (i: number) =>
 		const dirContent = yield* readDirectory(env.FOLDER_PATH, []).pipe(
 			Effect.timed,
 			Effect.tap(([duration, result]) =>
-				Console.log(`Iteration ${i} took ${Duration.toMillis(duration)}ms and found ${result.length} files`)
+				Console.log(`Iteration ${i} took ${Duration.toMillis(duration)}ms and found ${result.length} files`),
 			),
 			Effect.tap(([duration, result]) => {
 				results.elapsed += Duration.toMillis(duration);
 				results.files += result.length;
 			}),
-			Effect.map(([_, result]) => result)
+			Effect.map(([_, result]) => result),
 		);
 
 		clearInterval(interval);
