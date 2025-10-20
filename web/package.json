@@ -24,6 +24,7 @@
 		"effect": "^3.17.13",
 		"jotai": "^2.14.0",
 		"lucide-react": "^0.544.0",
+		"posthog-js": "^1.277.0",
 		"react": "19.1.1",
 		"react-dom": "19.1.1",
 		"react-server-dom-webpack": "19.1.1",
