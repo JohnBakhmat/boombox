@@ -82,27 +82,25 @@ export function readDirectory(dirPath: string, skip: string[] = []) {
 	}).pipe(Effect.withSpan("readDirectory"));
 }
 
-export function readDirectoryStream(dirPath: string, skip: string[] = []) {
-	return Effect.gen(function* () {
-		const fs = yield* FileSystem.FileSystem;
-		const path = yield* Path.Path;
+export const readDirectoryStream = Effect.fn("read-directory-stream")(function* (dirPath: string, skip: string[] = []) {
+	const fs = yield* FileSystem.FileSystem;
+	const path = yield* Path.Path;
 
-		const files = yield* fs.readDirectory(dirPath, {
-			recursive: true,
-		});
+	const files = yield* fs.readDirectory(dirPath, {
+		recursive: true,
+	});
 
-		yield* Console.log(files);
+	yield* Console.log(files);
 
-		const stream = Stream.fromIterable(files).pipe(
-			Stream.map((file) => path.resolve(dirPath, file)),
-			Stream.filter((file) => supportedExtensions.some((ext) => file.endsWith(ext)) === true),
-			Stream.filter((file) => skip.includes(file) === false),
-			Stream.mapEffect((file) => parseFile(file), {
-				concurrency: 10,
-			}),
-			Stream.catchAll((err) => Stream.empty),
-		);
+	const stream = Stream.fromIterable(files).pipe(
+		Stream.map((file) => path.resolve(dirPath, file)),
+		Stream.filter((file) => supportedExtensions.some((ext) => file.endsWith(ext)) === true),
+		Stream.filter((file) => skip.includes(file) === false),
+		Stream.mapEffect((file) => parseFile(file), {
+			concurrency: 10,
+		}),
+		Stream.catchAll((err) => Stream.empty),
+	);
 
-		return stream;
-	}).pipe(Effect.withSpan("readDirectoryStream"));
-}
+	return stream;
+});
