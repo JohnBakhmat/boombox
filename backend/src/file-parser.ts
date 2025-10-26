@@ -1,6 +1,6 @@
-import * as flac from "./flac";
-import { Effect, Option, Console, Duration, Data, Stream } from "effect";
+import { Effect, Console, Data, Stream } from "effect";
 import { FileSystem, Path } from "@effect/platform";
+import { FlacService } from "./flac/service";
 
 const SUPPORTED_EXTENSIONS = ["flac"] as const;
 type SupportedExtension = (typeof SUPPORTED_EXTENSIONS)[number];
@@ -10,79 +10,7 @@ class UnsupportedFileError extends Data.TaggedError("UnsupportedFileError")<{
 	message: string;
 }> {}
 
-const supportedExtensions = [".flac"] as const;
-
-export function parseFile(path: string) {
-	return Effect.gen(function* () {
-		const extension = path.split(".").pop();
-		const assumedType =
-			extension && SUPPORTED_EXTENSIONS.includes(extension as SupportedExtension)
-				? (extension as SupportedExtension)
-				: null;
-
-		if (!assumedType) {
-			return yield* Effect.fail(new UnsupportedFileError({ message: "File is unsupported" }));
-		}
-
-		if (assumedType === "flac") {
-			const isFlac = yield* flac.isFlac(path);
-			if (isFlac) {
-				const metadata = yield* flac.readMetadata(path);
-
-				return metadata;
-			}
-		}
-		return yield* Effect.fail(new UnsupportedFileError({ message: "File is unsupported" }));
-	}).pipe(
-		Effect.tapError((e) => {
-			if (e._tag === "UnsupportedFileError") return Effect.succeed(null);
-
-			return Console.error(e);
-		}),
-		Effect.withSpan("parseFile"),
-	);
-}
-
-export function parseManyFiles(paths: string[]) {
-	return Effect.gen(function* () {
-		const tasks = paths.map((path) => Effect.option(parseFile(path)));
-
-		const files = yield* Effect.all(tasks, {
-			concurrency: 10,
-		});
-
-		const successful = files.filter(Option.isSome).map((file) => file.value);
-
-		return successful;
-	}).pipe(Effect.withSpan("parseManyFiles"));
-}
-
-export function readDirectory(dirPath: string, skip: string[] = []) {
-	return Effect.gen(function* () {
-		const fs = yield* FileSystem.FileSystem;
-		const path = yield* Path.Path;
-
-		const files = yield* fs.readDirectory(dirPath, {
-			recursive: true,
-		});
-
-		yield* Console.log(files);
-
-		const relative = files.map((file) => path.resolve(dirPath, file));
-		yield* Console.log(relative);
-
-		const filtered = relative.filter((file) => skip.includes(file) === false);
-		yield* Console.log("FILTERED", filtered);
-
-		if (filtered.length === 0) {
-			return yield* Effect.succeed([]);
-		}
-
-		return yield* parseManyFiles(filtered);
-	}).pipe(Effect.withSpan("readDirectory"));
-}
-
-export const readDirectoryStream = Effect.fn("read-directory-stream")(function* (dirPath: string, skip: string[] = []) {
+export const readDirectory = Effect.fn("read-directory")(function* (dirPath: string, skip: string[] = []) {
 	const fs = yield* FileSystem.FileSystem;
 	const path = yield* Path.Path;
 
@@ -94,7 +22,7 @@ export const readDirectoryStream = Effect.fn("read-directory-stream")(function* 
 
 	const stream = Stream.fromIterable(files).pipe(
 		Stream.map((file) => path.resolve(dirPath, file)),
-		Stream.filter((file) => supportedExtensions.some((ext) => file.endsWith(ext)) === true),
+		Stream.filter((file) => SUPPORTED_EXTENSIONS.some((ext) => file.endsWith(ext)) === true),
 		Stream.filter((file) => skip.includes(file) === false),
 		Stream.mapEffect((file) => parseFile(file), {
 			concurrency: 10,
@@ -103,4 +31,29 @@ export const readDirectoryStream = Effect.fn("read-directory-stream")(function* 
 	);
 
 	return stream;
+});
+
+export const parseFile = Effect.fn("parse-file")(function* (path: string) {
+		const extension = path.split(".").pop();
+		const assumedType =
+			extension && SUPPORTED_EXTENSIONS.includes(extension as SupportedExtension)
+				? (extension as SupportedExtension)
+				: null;
+
+		if (!assumedType) {
+			return yield* Effect.fail(new UnsupportedFileError({ message: "File is unsupported" }));
+		}
+
+		if (assumedType === "flac") {
+
+			const flacService = yield* FlacService;
+
+			const isFlac = yield* flacService.isFlac(path);
+			if (isFlac) {
+				const metadata = yield* flacService.readMetadata(path);
+
+				return metadata;
+			}
+		}
+		return yield* Effect.fail(new UnsupportedFileError({ message: "File is unsupported" }));
 });

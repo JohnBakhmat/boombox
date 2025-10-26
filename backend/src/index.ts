@@ -1,19 +1,24 @@
-import { BunContext, BunRuntime } from "@effect/platform-bun";
-import { Effect, Layer } from "effect";
+import { BunContext, BunFileSystem, BunRuntime } from "@effect/platform-bun";
+import { Config, Effect, Layer } from "effect";
 import { DatabaseLive } from "./db";
-import { Env, EnvLive } from "./env";
 import { syncLibraryStream } from "./sync-library";
 import { OtelLive } from "./otel";
 import { startApi } from "./api";
+import { FlacService } from "./flac/service";
 
-const layers = Layer.mergeAll(BunContext.layer, EnvLive, DatabaseLive.Default);
+const layers = Layer.mergeAll(
+	BunContext.layer, 
+	OtelLive,
+	DatabaseLive.Default, 
+	FlacService.Default.pipe(Layer.provide(BunFileSystem.layer)),
+);
 
 const main = Effect.gen(function* () {
-	const env = yield* Env.pipe(Effect.flatMap((x) => x.getEnv)).pipe(Effect.withSpan("env"));
+	const folderPath = yield* Config.string("FOLDER_PATH");	
 
-	yield* syncLibraryStream(env.FOLDER_PATH);
+	yield* syncLibraryStream(folderPath);
 
 	startApi();
-}).pipe(Effect.provide(OtelLive), Effect.provide(layers));
+}).pipe(Effect.provide(layers));
 
 BunRuntime.runMain(main);
