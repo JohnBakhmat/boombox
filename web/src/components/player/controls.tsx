@@ -1,26 +1,23 @@
-import { useAtomValue } from "jotai";
-import { fileAtom } from "@/atoms";
-
 import { Pause, Play } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
-import { useControls } from "./use-controls";
 import { Button } from "@/components/ui/button";
 import { formatDate } from "date-fns";
+import { usePlayerStore, getVolumePercent } from "@/stores/player";
 
 export function Controls() {
-	const file = useAtomValue(fileAtom);
+	const currentTrack = usePlayerStore((state) => state.currentTrack);
+	const isPlaying = usePlayerStore((state) => state.isPlaying);
+	const volume = usePlayerStore((state) => state.volume);
+	const togglePlayPause = usePlayerStore((state) => state.togglePlayPause);
+	const setVolumePercent = usePlayerStore((state) => state.setVolumePercent);
 
-	const {
-		togglePlayPause,
-		isPlaying,
-		volumePercent,
-		setVolumePercent,
+	const volumePercent = getVolumePercent(volume);
 
-		maxDurationMs,
-		curDurationMs,
-	} = useControls({});
+	// Hardcoded duration values (unchanged from original)
+	const maxDurationMs = (12 * 60 + 47) * 1000;
+	const curDurationMs = (0 * 60 + 0) * 1000;
 
-	if (!file) {
+	if (!currentTrack) {
 		return null;
 	}
 

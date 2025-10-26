@@ -1,8 +1,7 @@
 "use client";
 
 import { AudioLines, Pause, Play } from "lucide-react";
-import { fileAtom, isPlayingAtom } from "@/atoms";
-import { useAtom } from "jotai";
+import { usePlayerStore } from "@/stores/player";
 
 type Props = Readonly<{
 	title: string;
@@ -13,15 +12,15 @@ type Props = Readonly<{
 }>;
 
 export function SongRow(props: Props) {
-	const [file, setFile] = useAtom(fileAtom);
-	const [isPlaying, setIsPlaying] = useAtom(isPlayingAtom);
+	const currentTrack = usePlayerStore((state) => state.currentTrack);
+	const isPlaying = usePlayerStore((state) => state.isPlaying);
+	const setTrack = usePlayerStore((state) => state.setTrack);
 
-	const isCurrent = file === props.fileId;
+	const isCurrent = currentTrack === props.fileId;
 	const isPaused = isCurrent && !isPlaying;
 
 	const handleClick = () => {
-		setFile(props.fileId);
-		setIsPlaying(true);
+		setTrack(props.fileId);
 	};
 
 	return (

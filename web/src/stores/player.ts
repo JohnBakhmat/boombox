@@ -1,39 +1,9 @@
-import { useAtom } from "jotai";
-import { isPlayingAtom, mainVolumeAtom } from "@/atoms";
+import { create } from "zustand";
 import { scale } from "@/utils";
 
 const MAX_VOLUME = 0.15;
 
-type Props = {
-	maxVolume?: number;
-};
-export function useControls({ maxVolume }: Props) {
-	const [isPlaying, setIsPlaying] = useAtom(isPlayingAtom);
-
-	const [mainVolume, setMainVolume] = useAtom(mainVolumeAtom);
-	const volumePercent = volumeBackwards(mainVolume, maxVolume);
-
-	const togglePlayPause = () => {
-		setIsPlaying((x) => !x);
-	};
-
-	const setVolumePercent = (volume: number) => {
-		setMainVolume(volumeForward(volume, maxVolume));
-	};
-
-	return {
-		togglePlayPause,
-		isPlaying,
-		volumePercent,
-		volumeReal: mainVolume,
-		setVolumePercent,
-
-		maxDurationMs: (12 * 60 + 47) * 1000,
-		curDurationMs: (0 * 60 + 0) * 1000,
-	};
-}
-
-// ## Helpers
+// ## Volume Helpers
 
 function perceptualVolume(x: number) {
 	//return (Math.exp(x) - 1) / (Math.E - 1);
@@ -63,6 +33,7 @@ function volumeForward(valuePercent: number, maxVolume = MAX_VOLUME) {
 	const clamped2 = clamp(scaled, 0, maxVolume);
 	return clamped2;
 }
+
 function volumeBackwards(value: number, maxVolume = MAX_VOLUME) {
 	const clamped = clamp(value, 0, maxVolume);
 	const scaled = scale(clamped, maxVolume, 1);
@@ -70,4 +41,41 @@ function volumeBackwards(value: number, maxVolume = MAX_VOLUME) {
 	const denormalized = scale(actual, 1, 100);
 	const clamped2 = clamp(denormalized, 0, 100);
 	return clamped2;
+}
+
+// ## Store
+
+interface PlayerState {
+	// State
+	isPlaying: boolean;
+	currentTrack: string | null;
+	volume: number; // 0-1 range
+
+	// Actions
+	play: () => void;
+	pause: () => void;
+	togglePlayPause: () => void;
+	setTrack: (fileId: string) => void;
+	setVolume: (volume: number) => void;
+	setVolumePercent: (percent: number) => void;
+}
+
+export const usePlayerStore = create<PlayerState>((set) => ({
+	// Initial state
+	isPlaying: false,
+	currentTrack: null,
+	volume: 0.02,
+
+	// Actions
+	play: () => set({ isPlaying: true }),
+	pause: () => set({ isPlaying: false }),
+	togglePlayPause: () => set((state) => ({ isPlaying: !state.isPlaying })),
+	setTrack: (fileId: string) => set({ currentTrack: fileId, isPlaying: true }),
+	setVolume: (volume: number) => set({ volume }),
+	setVolumePercent: (percent: number) => set({ volume: volumeForward(percent) }),
+}));
+
+// Helper to get volume as percentage (0-100)
+export function getVolumePercent(volume: number): number {
+	return volumeBackwards(volume);
 }

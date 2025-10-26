@@ -1,18 +1,19 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { fileAtom, isPlayingAtom, mainVolumeAtom } from "@/atoms";
-import { useAtom, useAtomValue } from "jotai";
+import { usePlayerStore } from "@/stores/player";
 import { Controls } from "./player/controls";
 
 function usePlayer() {
 	const audioRef = useRef<HTMLAudioElement | null>(null);
 
-	const file = useAtomValue(fileAtom);
-	const [isPlaying, setIsPlaying] = useAtom(isPlayingAtom);
-	const mainVolume = useAtomValue(mainVolumeAtom);
+	const currentTrack = usePlayerStore((state) => state.currentTrack);
+	const isPlaying = usePlayerStore((state) => state.isPlaying);
+	const volume = usePlayerStore((state) => state.volume);
+	const play = usePlayerStore((state) => state.play);
+	const pause = usePlayerStore((state) => state.pause);
 
-	const link = file ? `http://localhost:3003/file/${file}` : "";
+	const link = currentTrack ? `http://localhost:3003/file/${currentTrack}` : "";
 	const player = audioRef.current;
 
 	useEffect(() => {
@@ -20,27 +21,27 @@ function usePlayer() {
 			return;
 		}
 
-		player.volume = mainVolume;
+		player.volume = volume;
 
 		if (isPlaying) {
 			player.play();
 		} else {
 			player.pause();
 		}
-	}, [audioRef, file, isPlaying]);
+	}, [audioRef, currentTrack, isPlaying]);
 
 	useEffect(() => {
 		if (!player) {
 			return;
 		}
-		player.volume = mainVolume;
-	}, [audioRef, mainVolume]);
+		player.volume = volume;
+	}, [audioRef, volume]);
 
 	const onPause = () => {
-		setIsPlaying(false);
+		pause();
 	};
 	const onPlay = () => {
-		setIsPlaying(true);
+		play();
 	};
 
 	return {
