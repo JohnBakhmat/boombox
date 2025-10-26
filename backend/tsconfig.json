@@ -1,5 +1,11 @@
 {
 	"compilerOptions": {
+		"plugins": [
+			{
+				"name": "@effect/language-service"
+			}
+		],
+
 		// Enable latest features
 		"lib": ["ESNext", "DOM"],
 		"target": "ESNext",
