@@ -3,17 +3,19 @@ import { client } from "@/lib/api";
 import { FetchFailedError } from "@/lib/errors";
 import { Effect, pipe } from "effect";
 
-const getAlbums = () => pipe(
-	Effect.tryPromise({
-		try: () => client.albums.get(),
-		catch: (err) => new FetchFailedError({
-			cause: err,
-			message: "Failed to fetch album"
-		})
-	}),
-	Effect.map(x => x.data),
-	Effect.flatMap(Effect.fromNullable)
-)
+const getAlbums = () =>
+	pipe(
+		Effect.tryPromise({
+			try: () => client.albums.get(),
+			catch: (err) =>
+				new FetchFailedError({
+					cause: err,
+					message: "Failed to fetch album",
+				}),
+		}),
+		Effect.map((x) => x.data),
+		Effect.flatMap(Effect.fromNullable),
+	);
 
 const AlbumPage = () =>
 	Effect.gen(function* () {
@@ -28,6 +30,6 @@ const AlbumPage = () =>
 				</div>
 			</div>
 		);
-	})
+	});
 
 export default () => Effect.runPromise(AlbumPage());
