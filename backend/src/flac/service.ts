@@ -3,10 +3,12 @@ import { FileSystem } from "@effect/platform";
 import { FlacHeaderFromUint8Array, MetadataFromUint8Array } from "./transformers";
 import { FlacError } from "./errors";
 import { MetadataWithFilepathSchema } from "~/metadata";
+import { BunFileSystem } from "@effect/platform-bun";
 
 const VORBIS_STREAMINFO = 4;
 
 export class FlacService extends Effect.Service<FlacService>()("FlacService", {
+	dependencies: [BunFileSystem.layer],
 	effect: Effect.gen(function* () {
 		const fs = yield* FileSystem.FileSystem;
 
@@ -22,7 +24,7 @@ export class FlacService extends Effect.Service<FlacService>()("FlacService", {
 				return yield* Effect.fail(
 					new FlacError({
 						message: "The file you are trying to parse as FLAC is NOT FLAC",
-					})
+					}),
 				);
 			}
 
@@ -50,12 +52,10 @@ export class FlacService extends Effect.Service<FlacService>()("FlacService", {
 
 		return {
 			isFlac,
-            readMetadata,
-		};
+			readMetadata,
+		} as const;
 	}),
 }) {}
-
-
 
 // Helpers
 const readHeader = Effect.fn("flac-readHeader")(function* (file: Uint8Array, offset: number) {
@@ -68,8 +68,8 @@ const readHeader = Effect.fn("flac-readHeader")(function* (file: Uint8Array, off
 				new FlacError({
 					cause: e,
 					message: "Failed reading header",
-				})
-		)
+				}),
+		),
 	);
 
 	return result;
@@ -88,8 +88,8 @@ const readVorbisComment = Effect.fn("readVorbisComment")(function* (file: Uint8A
 				new FlacError({
 					cause: e,
 					message: "Failed to parse Vorbis Comment",
-				})
-		)
+				}),
+		),
 	);
 
 	return vorbisComment;

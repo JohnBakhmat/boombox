@@ -2,7 +2,7 @@ import { SqliteClient, SqliteMigrator } from "@effect/sql-sqlite-bun";
 
 import * as SqliteDrizzle from "@effect/sql-drizzle/Sqlite";
 import { Config, Effect, Layer, pipe } from "effect";
-import { BunFileSystem } from "@effect/platform-bun";
+import { BunFileSystem, BunPath } from "@effect/platform-bun";
 import * as schema from "./schema";
 
 //export const SqlLive = SqliteClient.layer({
@@ -16,7 +16,7 @@ const SqliteLive = SqliteClient.layerConfig({
 });
 
 export class DatabaseLive extends Effect.Service<DatabaseLive>()("DatabaseLive", {
-	dependencies: [SqliteLive],
+	dependencies: [SqliteLive, BunFileSystem.layer, BunPath.layer],
 	effect: SqliteDrizzle.make<typeof schema>({
 		schema,
 	}),
