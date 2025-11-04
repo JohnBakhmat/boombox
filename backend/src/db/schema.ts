@@ -1,17 +1,18 @@
 import { relations } from "drizzle-orm";
 import { sqliteTable, text, unique } from "drizzle-orm/sqlite-core";
+import { ulid } from "ulid";
 
-const id = () =>
+const id = (prefix?: string) =>
 	text()
 		.primaryKey()
-		.$defaultFn(() => Bun.randomUUIDv7());
+		.$defaultFn(() => (prefix ? `${prefix}_${ulid()}` : ulid()));
 
 export const fileTable = sqliteTable("file", {
-	id: id(),
+	id: id("file"),
 	path: text().notNull().unique(),
 });
 export const songTable = sqliteTable("song", {
-	id: id(),
+	id: id("song"),
 	title: text().notNull(),
 	fileId: text()
 		.notNull()
@@ -44,7 +45,7 @@ export const songRelations = relations(songTable, ({ one, many }) => ({
 export const artistTable = sqliteTable(
 	"artist",
 	{
-		id: id(),
+		id: id("artist"),
 		name: text().notNull(),
 	},
 	(t) => [unique().on(t.name)],
@@ -53,7 +54,7 @@ export const artistTable = sqliteTable(
 export const albumTable = sqliteTable(
 	"album",
 	{
-		id: id(),
+		id: id("album"),
 		title: text().notNull(),
 	},
 	(t) => [unique().on(t.title)],
