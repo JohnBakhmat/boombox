@@ -27,6 +27,7 @@ export const readDirectory = Effect.fn("read-directory")(function* (dirPath: str
 		Stream.mapEffect((file) => parseFile(file), {
 			concurrency: 10,
 		}),
+		Stream.tap(Console.log),
 		Stream.catchAll((err) => Stream.empty),
 	);
 
@@ -34,26 +35,26 @@ export const readDirectory = Effect.fn("read-directory")(function* (dirPath: str
 });
 
 export const parseFile = Effect.fn("parse-file")(function* (path: string) {
-		const extension = path.split(".").pop();
-		const assumedType =
-			extension && SUPPORTED_EXTENSIONS.includes(extension as SupportedExtension)
-				? (extension as SupportedExtension)
-				: null;
+	const extension = path.split(".").pop();
+	const assumedType =
+		extension && SUPPORTED_EXTENSIONS.includes(extension as SupportedExtension)
+			? (extension as SupportedExtension)
+			: null;
 
-		if (!assumedType) {
-			return yield* Effect.fail(new UnsupportedFileError({ message: "File is unsupported" }));
-		}
-
-		if (assumedType === "flac") {
-
-			const flacService = yield* FlacService;
-
-			const isFlac = yield* flacService.isFlac(path);
-			if (isFlac) {
-				const metadata = yield* flacService.readMetadata(path);
-
-				return metadata;
-			}
-		}
+	if (!assumedType) {
 		return yield* Effect.fail(new UnsupportedFileError({ message: "File is unsupported" }));
+	}
+
+	if (assumedType === "flac") {
+		const flacService = yield* FlacService;
+
+		const isFlac = yield* flacService.isFlac(path);
+		if (isFlac) {
+			const metadata = yield* flacService.readMetadata(path);
+
+			return metadata;
+		}
+	}
+	return yield* Effect.fail(new UnsupportedFileError({ message: "File is unsupported" }));
 });
+

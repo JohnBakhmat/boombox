@@ -99,6 +99,18 @@ export const MetadataFromUint8Array = Schema.transformOrFail(MetadataInput, Meta
 							metadata.trackNumber = parsedNumber.value;
 						}
 						break;
+
+					case "MUSICBRAINZ_RELEASEGROUPID":
+						metadata.musicBrainzReleaseGroupId = value;
+						break;
+
+					case "MUSICBRAINZ_ARTISTID":
+						metadata.musicBrainzArtistId = value;
+						break;
+
+					case "MUSICBRAINZ_TRACKID":
+						metadata.musicBrainzTrackId = value;
+						break;
 					default:
 						continue;
 				}
@@ -126,4 +138,3 @@ function parseFieldValue(str: string): { key: string; value: string } | null {
 	}
 	return { key: key.toUpperCase(), value };
 }
-
