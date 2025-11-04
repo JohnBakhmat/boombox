@@ -4,7 +4,7 @@ import { readDirectory } from "./file-parser";
 
 import { albumTable, artistTable, artistToAlbumTable, fileTable, songTable, songToArtistTable } from "./db/schema";
 import type { MetadataWithFilepathSchema } from "./metadata";
-import { colors } from "./chalk";
+import { colors } from "./utils/chalk";
 
 type Metadata = typeof MetadataWithFilepathSchema.Type;
 
@@ -16,7 +16,7 @@ export const syncLibraryStream = Effect.fn("sync-library-stream")(function* (lib
 
 	const stream = yield* readDirectory(
 		libraryPath,
-		alreadyIndexed.map((x) => x.path)
+		alreadyIndexed.map((x) => x.path),
 	);
 
 	yield* stream.pipe(
@@ -29,20 +29,20 @@ export const syncLibraryStream = Effect.fn("sync-library-stream")(function* (lib
 				"by",
 				colors.FgYellow,
 				x.artists.join(","),
-				colors.Reset
-			)
+				colors.Reset,
+			),
 		),
 		Stream.grouped(10),
 		//Stream.schedule(Schedule.spaced("3 second")),
 		Stream.mapEffect(saveChunk, { concurrency: 5 }),
-		Stream.runDrain
+		Stream.runDrain,
 	);
 });
 
 const saveChunk = Effect.fn("save-chunk")(function* (chunk: Chunk.Chunk<Metadata>) {
 	const [files, artists, albums] = yield* Effect.all(
 		[createFiles(chunk), createArtists(chunk), createAlbums(chunk)],
-		{ concurrency: 3 }
+		{ concurrency: 3 },
 	);
 
 	const songs = yield* createSongs(chunk, { files, albums });
@@ -58,7 +58,7 @@ const saveChunk = Effect.fn("save-chunk")(function* (chunk: Chunk.Chunk<Metadata
 				albums,
 			}),
 		],
-		{ concurrency: 2 }
+		{ concurrency: 2 },
 	);
 
 	return {
@@ -74,7 +74,7 @@ const connectArtistToSong = Effect.fn("connect-artist-song")(function* (
 	lookup: {
 		songs: Effect.Effect.Success<ReturnType<typeof createSongs>>;
 		artists: Effect.Effect.Success<ReturnType<typeof createArtists>>;
-	}
+	},
 ) {
 	const db = yield* DatabaseLive;
 	const newSongArtist = Chunk.toArray(chunk)
@@ -82,7 +82,7 @@ const connectArtistToSong = Effect.fn("connect-artist-song")(function* (
 			entry.artists.map((artist) => ({
 				artistId: lookup.artists.find((x) => x.name === artist)?.id ?? "",
 				songId: lookup.songs.find((x) => x.title === entry.title)?.id ?? "",
-			}))
+			})),
 		)
 		.filter((x) => x.songId && x.artistId);
 
@@ -99,7 +99,7 @@ const connectArtistAlbum = Effect.fn("connect-album-artist")(function* (
 	lookup: {
 		albums: Effect.Effect.Success<ReturnType<typeof createAlbums>>;
 		artists: Effect.Effect.Success<ReturnType<typeof createArtists>>;
-	}
+	},
 ) {
 	const db = yield* DatabaseLive;
 	const newAlbumArtists = Chunk.toArray(chunk)
@@ -121,7 +121,7 @@ const createSongs = Effect.fn("create-songs")(function* (
 	lookup: {
 		files: Effect.Effect.Success<ReturnType<typeof createFiles>>;
 		albums: Effect.Effect.Success<ReturnType<typeof createAlbums>>;
-	}
+	},
 ) {
 	const db = yield* DatabaseLive;
 
@@ -180,7 +180,7 @@ const createArtists = Effect.fn("create-artists")(function* (chunk: Chunk.Chunk<
 		.values(
 			newArtists.map((x) => ({
 				name: x,
-			}))
+			})),
 		)
 		.onConflictDoNothing()
 		.returning();
@@ -207,7 +207,7 @@ const createAlbums = Effect.fn("create-albums")(function* (chunk: Chunk.Chunk<Me
 		.values(
 			newAlbums.map((x) => ({
 				title: x,
-			}))
+			})),
 		)
 		.onConflictDoNothing()
 		.returning();
@@ -222,7 +222,7 @@ const createAlbums = Effect.fn("create-albums")(function* (chunk: Chunk.Chunk<Me
 
 function chunkToUniqueArray<T extends object, U extends string | readonly string[]>(
 	chunk: Chunk.Chunk<T>,
-	map: (x: T) => U
+	map: (x: T) => U,
 ) {
 	const array = Chunk.toArray(chunk);
 	const x = array.flatMap(map);

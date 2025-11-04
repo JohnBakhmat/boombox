@@ -2,7 +2,7 @@ import { Data, Effect, Layer, ManagedRuntime } from "effect";
 import { Elysia, status, StatusMap, t, type HTTPHeaders } from "elysia";
 import { DatabaseLive } from "./db";
 import { BunContext } from "@effect/platform-bun";
-import { EnvLive } from "./env";
+import { EnvLive } from "./utils/env";
 import { albumTable, artistTable, fileTable, songTable, songToArtistTable } from "./db/schema";
 import { eq } from "drizzle-orm";
 import { openapi } from "@elysiajs/openapi";

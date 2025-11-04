@@ -2,7 +2,7 @@ import { FileSystem } from "@effect/platform";
 import { Console, Data, Effect, Option, ParseResult, Schema } from "effect";
 
 import { type Metadata, MetadataSchema, MetadataWithFilepathSchema } from "./metadata";
-import { Bit, Int24, safeParseInt, Uint7 } from "./utils";
+import { Bit, Int24, safeParseInt, Uint7 } from "./utils/utils";
 
 const VORBIS_STREAMINFO = 4;
 

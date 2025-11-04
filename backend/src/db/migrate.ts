@@ -3,7 +3,7 @@ import { Effect, Layer } from "effect";
 import { drizzle } from "drizzle-orm/bun-sqlite";
 import { migrate } from "drizzle-orm/bun-sqlite/migrator";
 import { Database } from "bun:sqlite";
-import { Env, EnvLive } from "../env";
+import { Env, EnvLive } from "../utils/env";
 
 const main = Effect.gen(function* () {
 	const env = yield* Env.pipe(Effect.flatMap((x) => x.getEnv));

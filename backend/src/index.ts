@@ -2,7 +2,7 @@ import { BunContext, BunRuntime } from "@effect/platform-bun";
 import { Config, Cron, Effect, Either, Layer, Option, Schedule } from "effect";
 import { DatabaseLive } from "./db";
 import { syncLibraryStream } from "./sync-library";
-import { OtelLive } from "./otel";
+import { OtelLive } from "./utils/otel";
 import { startApi } from "./api";
 import { FlacService } from "./flac/service";
 
