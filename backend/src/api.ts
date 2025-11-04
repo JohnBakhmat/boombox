@@ -115,7 +115,7 @@ class ApiService extends Effect.Service<ApiService>()("@boombox/backend/api/ApiS
 						{ concurrency: "unbounded" },
 					);
 
-					return yield* Schema.decodeUnknown(Album)({
+					return yield* Schema.decodeUnknown(Schema.Struct({ ...Album.fields, songs: Schema.Undefined }))({
 						...row,
 						artists,
 					});

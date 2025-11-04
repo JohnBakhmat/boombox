@@ -67,7 +67,7 @@ const Album = Schema.Struct({
 	id: AlbumId,
 	title: Schema.NonEmptyString,
 	artists: Schema.Array(Artist),
-	songs: Schema.Array(Song),
+	songs: Schema.optional(Schema.Array(Song)),
 }).annotations({
 	title: "albums",
 	identifier: "Album",

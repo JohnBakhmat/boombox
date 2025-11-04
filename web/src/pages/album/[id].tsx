@@ -65,23 +65,6 @@ async function getMock() {
 	};
 }
 
-const ArtistSchema = Schema.Struct({
-	id: Schema.NonEmptyString,
-	name: Schema.NonEmptyString,
-});
-const SongSchema = Schema.Struct({
-	id: Schema.NonEmptyString,
-	title: Schema.NonEmptyString,
-	fileId: Schema.NonEmptyString,
-	artists: Schema.Array(ArtistSchema),
-});
-
-const AlbumSchema = Schema.Struct({
-	id: Schema.NonEmptyString,
-	title: Schema.NonEmptyString,
-	songs: Schema.Array(SongSchema),
-});
-
 const fetchAlbum = (id: string) =>
 	pipe(
 		Effect.tryPromise({
