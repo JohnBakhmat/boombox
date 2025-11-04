@@ -1,4 +1,4 @@
-import { Data, Effect, Layer, ManagedRuntime } from "effect";
+import { Data, Effect, Layer, ManagedRuntime, Schema } from "effect";
 import { Elysia, status, StatusMap, t, type HTTPHeaders } from "elysia";
 import { DatabaseLive } from "./db";
 import { BunContext } from "@effect/platform-bun";
@@ -8,6 +8,7 @@ import { eq } from "drizzle-orm";
 import { openapi } from "@elysiajs/openapi";
 import { pipe } from "effect";
 import type { ElysiaCookie } from "elysia/cookies";
+import { Album, Artist, Song } from "./types";
 
 class FileNotFoundError extends Data.TaggedError("FileNotFoundError")<{
 	message: string;
@@ -65,17 +66,33 @@ class ApiService extends Effect.Service<ApiService>()("@boombox/backend/api/ApiS
 					),
 				);
 
-			const artists = album.artists.map((a) => a.artist);
-			const songs = album.songs.map((s) => ({
-				...s,
-				artists: s.artists.map((a) => a.artist),
-			}));
+			const artists = yield* Effect.all(
+				album.artists.map(({ artist }) => Schema.decodeUnknown(Artist)(artist)),
+				{ concurrency: "unbounded" },
+			);
 
-			return {
-				...album,
-				artists,
-				songs,
-			};
+			const songs = yield* Effect.all(
+				album.songs.map((song) =>
+					Effect.gen(function* () {
+						const songArtists = yield* Effect.all(
+							song.artists.map(({ artist }) => Schema.decodeUnknown(Artist)(artist)),
+						);
+						return yield* Schema.decodeUnknown(Song)({
+							...song,
+							artists: songArtists,
+						});
+					}),
+				),
+			);
+
+			const result = yield* Schema.decodeUnknown(Album)({
+				id: album.id,
+				title: album.title,
+				artists: artists,
+				songs: songs,
+			});
+
+			return result;
 		});
 
 		const getAlbumList = Effect.fn("getAlbumList")(function* () {
@@ -91,10 +108,21 @@ class ApiService extends Effect.Service<ApiService>()("@boombox/backend/api/ApiS
 				})
 				.pipe(Effect.catchAll((_) => Effect.succeed([])));
 
-			return rows.map((r) => ({
-				...r,
-				artists: r.artists.map((a) => a.artist),
-			}));
+			const result = rows.map((row) =>
+				Effect.gen(function* () {
+					const artists = yield* Effect.all(
+						row.artists.map(({ artist }) => Schema.decodeUnknown(Artist)(artist)),
+						{ concurrency: "unbounded" },
+					);
+
+					return yield* Schema.decodeUnknown(Album)({
+						...row,
+						artists,
+					});
+				}),
+			);
+
+			return yield* Effect.all(result);
 		});
 
 		const getFileById = Effect.fn("getFileById")(function* (id: string, set: ElysiaSet) {
