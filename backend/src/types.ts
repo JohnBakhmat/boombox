@@ -48,6 +48,8 @@ const Song = Schema.Struct({
 	id: SongId,
 	title: Schema.NonEmptyString,
 	artists: Schema.Array(Artist),
+	// TODO: this can only positive non zero int
+	trackNumber: Schema.NullOr(Schema.Int),
 	fileId: AudioFileId,
 }).annotations({
 	title: "songs",

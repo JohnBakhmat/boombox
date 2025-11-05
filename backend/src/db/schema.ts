@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm";
-import { sqliteTable, text, unique } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, unique, int } from "drizzle-orm/sqlite-core";
 import { ulid } from "ulid";
 
 const id = (prefix?: string) =>
@@ -14,6 +14,7 @@ export const fileTable = sqliteTable("file", {
 export const songTable = sqliteTable("song", {
 	id: id("song"),
 	title: text().notNull(),
+	trackNumber: int(),
 	fileId: text()
 		.notNull()
 		.references(() => fileTable.id, { onDelete: "cascade" })

@@ -1,48 +1,55 @@
 {
-	"version": "7",
-	"dialect": "sqlite",
-	"entries": [
-		{
-			"idx": 0,
-			"version": "6",
-			"when": 1748676283429,
-			"tag": "0000_smiling_warlock",
-			"breakpoints": true
-		},
-		{
-			"idx": 1,
-			"version": "6",
-			"when": 1756567708406,
-			"tag": "0001_careful_valeria_richards",
-			"breakpoints": true
-		},
-		{
-			"idx": 2,
-			"version": "6",
-			"when": 1757078489466,
-			"tag": "0002_curvy_dormammu",
-			"breakpoints": true
-		},
-		{
-			"idx": 3,
-			"version": "6",
-			"when": 1757101063371,
-			"tag": "0003_unique_cable",
-			"breakpoints": true
-		},
-		{
-			"idx": 4,
-			"version": "6",
-			"when": 1757101301885,
-			"tag": "0004_thankful_meggan",
-			"breakpoints": true
-		},
-		{
-			"idx": 5,
-			"version": "6",
-			"when": 1757149162775,
-			"tag": "0005_ambiguous_stryfe",
-			"breakpoints": true
-		}
-	]
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1748676283429,
+      "tag": "0000_smiling_warlock",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1756567708406,
+      "tag": "0001_careful_valeria_richards",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1757078489466,
+      "tag": "0002_curvy_dormammu",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1757101063371,
+      "tag": "0003_unique_cable",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1757101301885,
+      "tag": "0004_thankful_meggan",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1757149162775,
+      "tag": "0005_ambiguous_stryfe",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1762350364881,
+      "tag": "0006_jittery_skreet",
+      "breakpoints": true
+    }
+  ]
 }

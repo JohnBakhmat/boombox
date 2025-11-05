@@ -127,6 +127,7 @@ const createSongs = Effect.fn("create-songs")(function* (
 
 	const newSongs = Chunk.toArray(chunk).map((x) => ({
 		title: x.title,
+		trackNumber: x.trackNumber,
 		fileId: lookup.files.find((file) => file.filePath === x.filePath)?.id!,
 		albumId: lookup.albums.find((album) => album.title === x.album)?.id!,
 	}));

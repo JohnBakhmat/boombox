@@ -44,6 +44,7 @@ class ApiService extends Effect.Service<ApiService>()("@boombox/backend/api/ApiS
 							},
 						},
 						songs: {
+							orderBy: [songTable.trackNumber],
 							with: {
 								artists: {
 									with: {
