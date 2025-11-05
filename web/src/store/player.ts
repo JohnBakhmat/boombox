@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 import { scale } from "@/lib/utils";
 
 const MAX_VOLUME = 0.15;
@@ -60,20 +61,28 @@ interface PlayerState {
 	setVolumePercent: (percent: number) => void;
 }
 
-export const usePlayerStore = create<PlayerState>((set) => ({
-	// Initial state
-	isPlaying: false,
-	currentTrack: null,
-	volume: 0.02,
+export const usePlayerStore = create<PlayerState>()(
+	persist(
+		(set) => ({
+			// Initial state
+			isPlaying: false,
+			currentTrack: null,
+			volume: 0.02,
 
-	// Actions
-	play: () => set({ isPlaying: true }),
-	pause: () => set({ isPlaying: false }),
-	togglePlayPause: () => set((state) => ({ isPlaying: !state.isPlaying })),
-	setTrack: (fileId: string) => set({ currentTrack: fileId, isPlaying: true }),
-	setVolume: (volume: number) => set({ volume }),
-	setVolumePercent: (percent: number) => set({ volume: volumeForward(percent) }),
-}));
+			// Actions
+			play: () => set({ isPlaying: true }),
+			pause: () => set({ isPlaying: false }),
+			togglePlayPause: () => set((state) => ({ isPlaying: !state.isPlaying })),
+			setTrack: (fileId: string) => set({ currentTrack: fileId, isPlaying: true }),
+			setVolume: (volume: number) => set({ volume }),
+			setVolumePercent: (percent: number) => set({ volume: volumeForward(percent) }),
+		}),
+		{
+			name: "boombox-player-volume",
+			partialize: (state) => ({ volume: state.volume }),
+		},
+	),
+);
 
 // Helper to get volume as percentage (0-100)
 export function getVolumePercent(volume: number): number {
