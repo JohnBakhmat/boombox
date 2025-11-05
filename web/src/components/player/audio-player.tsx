@@ -58,7 +58,7 @@ export function AudioPlayer() {
 	return (
 		<>
 			<Controls />
-			<audio ref={ref} src={src} onPause={onPause} onPlay={onPlay}></audio>
+			<audio ref={ref} src={src || undefined} onPause={onPause} onPlay={onPlay}></audio>
 		</>
 	);
 }
