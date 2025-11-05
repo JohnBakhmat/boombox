@@ -135,3 +135,14 @@ code {
 		@apply bg-background text-foreground;
 	}
 }
+
+.track-row-grid {
+	grid-template-areas:
+		"number title duration"
+		"number artists duration";
+
+	display: grid;
+	grid-template-columns: auto 1fr auto;
+	grid-template-rows: repeat(minmax(0 auto), 2);
+	align-items: center;
+}

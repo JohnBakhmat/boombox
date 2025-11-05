@@ -1,5 +1,7 @@
+"use client";
+
 import { AudioLines, Pause, Play } from "lucide-react";
-import { usePlayerStore } from "@/stores/player";
+import { usePlayerStore } from "@/store/player";
 
 type Props = Readonly<{
 	title: string;
