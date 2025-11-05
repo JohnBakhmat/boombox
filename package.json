@@ -4,8 +4,7 @@
   "workspaces": [
     "web",
     "backend",
-    "shared",
-    "web-tanstack"
+    "shared"
   ],
   "scripts": {
     "dev": "bun --filter '*' dev",
