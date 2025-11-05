@@ -46,7 +46,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 			<head>
 				<HeadContent />
 			</head>
-			<body>
+			<body className="pb-[120px]">
 				<AudioPlayer />
 				{children}
 				<TanStackDevtools
