@@ -9,7 +9,8 @@ export const Route = createFileRoute("/album/$albumId")({
 	component: AlbumPage,
 });
 
-const cover = "https://writteninmusic.com/wp-content/uploads/2025/09/TOP-Breach.jpg";
+const cover =
+	"https://kagi.com/proxy/61XULTvSzAL._UF1000,1000_QL80_.jpg?c=CXPfL3-FqybbvZNQU82_BGSCqYZMz5YT_CgNKn5TDDXCMTx4RBDER1f1uKKcHU3q-jYfB0s9g7IqjQnd4qu98gIcHOAFJ-6Z9h86prZDhCifllLXbHfuIeOHoHw5gbgC";
 
 function AlbumPage() {
 	return (
