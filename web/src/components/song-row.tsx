@@ -1,3 +1,5 @@
+"use client";
+
 import { AudioLines, Pause, Play } from "lucide-react";
 import { usePlayerStore } from "@/stores/player";
 
