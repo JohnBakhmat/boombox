@@ -74,17 +74,17 @@ export const MusicbrainzCoverartLayer = Layer.succeed(
 // Errors
 //
 
-class RateLimitError extends Data.TaggedError("RateLimitError")<{
+export class RateLimitError extends Data.TaggedError("RateLimitError")<{
 	message: string;
 	cause?: unknown;
 }> {}
 
-class InvalidReleaseGroupIdError extends Data.TaggedError("InvalidReleaseGroupIdError")<{
+export class InvalidReleaseGroupIdError extends Data.TaggedError("InvalidReleaseGroupIdError")<{
 	message: string;
 	cause?: unknown;
 }> {}
 
-class UnknownFetchError extends Data.TaggedError("UnknownFetchError")<{
+export class UnknownFetchError extends Data.TaggedError("UnknownFetchError")<{
 	message: string;
 	cause?: unknown;
 }> {}

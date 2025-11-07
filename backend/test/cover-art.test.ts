@@ -1,8 +1,6 @@
 import { expect, it } from "@effect/vitest";
-import { Effect, Exit, Layer, TestConfig, TestServices } from "effect";
-import { BunContext } from "@effect/platform-bun/index";
-import { Console } from "effect";
-import { CoverartService, InvalidReleaseGroupIdError, MusicbrainzCoverartLayer } from "../src/cover-art";
+import { Effect, Exit } from "effect";
+import { CoverartService, MusicbrainzCoverartLayer } from "../src/cover-art";
 
 it.effect("should fetch cover art if release group is correct", () =>
 	Effect.gen(function* () {
