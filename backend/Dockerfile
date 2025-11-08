@@ -28,6 +28,8 @@ WORKDIR /app
 FROM base AS release
 COPY --from=install /temp/prod/node_modules node_modules
 COPY --from=prerelease /app/backend/dist .
+# Copy migration files (SQL schemas)
+COPY --from=prerelease /app/backend/drizzle ./drizzle
 
 # Create directories for volumes with proper ownership
 RUN mkdir -p /app/data /app/music && \

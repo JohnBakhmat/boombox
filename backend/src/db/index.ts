@@ -11,7 +11,7 @@ import * as schema from "./schema";
 
 //const DrizzleLive = SqliteDrizzle.layer.pipe(Layer.provide(SqlLive));
 
-const SqliteLive = SqliteClient.layerConfig({
+export const SqliteLive = SqliteClient.layerConfig({
 	filename: Config.string("DB_URL"),
 });
 
