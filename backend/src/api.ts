@@ -216,7 +216,7 @@ class ApiService extends Effect.Service<ApiService>()("@boombox/backend/api/ApiS
 }) {}
 
 export function startApi() {
-	return new Elysia()
+	const app = new Elysia()
 		.use(openapi())
 		.get("/", "Hello Elysia")
 		.get("/albums", () => runtime.runPromise(ApiService.getAlbumList()))
@@ -235,8 +235,14 @@ export function startApi() {
 				}),
 			},
 		)
-		.get("/songs", () => pipe(ApiService.getAllSongs(), runtime.runPromise))
-		.listen(3003);
+		.get("/songs", () => pipe(ApiService.getAllSongs(), runtime.runPromise));
+
+	const server = app.listen(3003);
+
+	return {
+		server,
+		runtime,
+	};
 }
 
 type GetSongType = {

@@ -1,5 +1,5 @@
 import { BunContext, BunRuntime } from "@effect/platform-bun";
-import { Config, Cron, Effect, Either, Layer, Option, Schedule } from "effect";
+import { Config, Cron, Deferred, Effect, Either, Fiber, Layer, Option, Schedule } from "effect";
 import { drizzle } from "drizzle-orm/bun-sqlite";
 import { migrate } from "drizzle-orm/bun-sqlite/migrator";
 import { Database } from "bun:sqlite";
@@ -19,6 +19,8 @@ const AppLayer = FlacService.Default.pipe(
 const syncCron = Cron.parse("*/1 * * * *").pipe(Either.getRight, Option.getOrThrow);
 const syncSchedule = Schedule.cron(syncCron);
 
+const SHUTDOWN_TIMEOUT_MS = 10_000;
+
 const main = Effect.gen(function* () {
 	// Run migrations first
 	yield* Effect.log("Running database migrations...");
@@ -30,9 +32,53 @@ const main = Effect.gen(function* () {
 	// Then start the application
 	const folderPath = yield* Config.string("FOLDER_PATH");
 
-	startApi();
+	const { server, runtime } = startApi();
+	yield* Effect.log("API server started on port 3003");
 
-	yield* syncLibraryStream(folderPath);
+	// Create a deferred to handle shutdown signal
+	const shutdownSignal = yield* Deferred.make<void>();
+
+	// Setup graceful shutdown handlers
+	const setupShutdownHandlers = Effect.sync(() => {
+		const handleShutdown = (signal: string) => {
+			Effect.runFork(
+				Effect.gen(function* () {
+					yield* Effect.log(`Received ${signal}, starting graceful shutdown...`);
+					yield* Deferred.succeed(shutdownSignal, undefined);
+				}).pipe(Effect.provide(AppLayer)),
+			);
+		};
+
+		process.on("SIGTERM", () => handleShutdown("SIGTERM"));
+		process.on("SIGINT", () => handleShutdown("SIGINT"));
+	});
+
+	yield* setupShutdownHandlers;
+
+	// Start library sync in the background
+	const syncFiber = yield* Effect.fork(syncLibraryStream(folderPath));
+
+	// Wait for shutdown signal
+	yield* Deferred.await(shutdownSignal);
+
+	// Begin graceful shutdown
+	yield* Effect.log("Shutting down API server...");
+
+	// Stop accepting new connections
+	yield* Effect.tryPromise(() => server.stop());
+	yield* Effect.log("API server stopped");
+
+	// Interrupt the sync fiber
+	yield* Effect.log("Stopping library sync...");
+	yield* Fiber.interrupt(syncFiber);
+	yield* Effect.log("Library sync stopped");
+
+	// Dispose of the runtime to clean up database connections
+	yield* Effect.log("Closing database connections...");
+	yield* Effect.tryPromise(() => runtime.dispose());
+	yield* Effect.log("Database connections closed");
+
+	yield* Effect.log("Graceful shutdown completed");
 }).pipe(Effect.provide(AppLayer));
 
 BunRuntime.runMain(main);
