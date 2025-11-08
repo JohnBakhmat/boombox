@@ -1,5 +1,5 @@
 import { BunContext, BunRuntime } from "@effect/platform-bun";
-import { Config, Cron, Deferred, Effect, Either, Fiber, Layer, Option, Schedule } from "effect";
+import { Config, Deferred, Effect, Fiber, Layer, Schedule } from "effect";
 import { drizzle } from "drizzle-orm/bun-sqlite";
 import { migrate } from "drizzle-orm/bun-sqlite/migrator";
 import { Database } from "bun:sqlite";
@@ -15,9 +15,6 @@ const AppLayer = FlacService.Default.pipe(
 	Layer.provideMerge(BunContext.layer),
 	Layer.merge(OtelLive),
 );
-
-const syncCron = Cron.parse("*/1 * * * *").pipe(Either.getRight, Option.getOrThrow);
-const syncSchedule = Schedule.cron(syncCron);
 
 const SHUTDOWN_TIMEOUT_MS = 10_000;
 
@@ -55,8 +52,10 @@ const main = Effect.gen(function* () {
 
 	yield* setupShutdownHandlers;
 
-	// Start library sync in the background
-	const syncFiber = yield* Effect.fork(syncLibraryStream(folderPath));
+	// Start library sync in the background, repeating every 10 minutes
+	const syncFiber = yield* Effect.fork(
+		syncLibraryStream(folderPath).pipe(Effect.repeat(Schedule.spaced("3 minutes"))),
+	);
 
 	// Wait for shutdown signal
 	yield* Deferred.await(shutdownSignal);
