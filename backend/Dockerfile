@@ -29,6 +29,18 @@ FROM base AS release
 COPY --from=install /temp/prod/node_modules node_modules
 COPY --from=prerelease /app/backend/dist .
 
+# Create directories for volumes with proper ownership
+RUN mkdir -p /app/data /app/music && \
+    chown -R bun:bun /app/data /app/music
+
+# Declare volumes
+VOLUME ["/app/data", "/app/music"]
+
 USER bun
-EXPOSE 3000/tcp
+EXPOSE 3003/tcp
+
+# Set default environment variables
+ENV DB_URL=/app/data/boombox.db
+ENV FOLDER_PATH=/app/music
+
 ENTRYPOINT [ "bun", "index.js" ]
