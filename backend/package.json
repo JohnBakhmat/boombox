@@ -4,6 +4,7 @@
 	"type": "module",
 	"scripts": {
 		"dev": "bun run --watch ./src/index.ts",
+		"build": "bun build ./src/index.ts --target=bun --bytecode --outdir=./dist",
 		"db:migrate": "bun run ./src/db/migrate.ts",
 		"db:gen": "drizzle-kit generate",
 		"test": "vitest run"
