@@ -47,13 +47,8 @@ export const parseFile = Effect.fn("parse-file")(function* (path: string) {
 
 	if (assumedType === "flac") {
 		const flacService = yield* FlacService;
-
-		const isFlac = yield* flacService.isFlac(path);
-		if (isFlac) {
-			const metadata = yield* flacService.readMetadata(path);
-
-			return metadata;
-		}
+		const metadata = yield* flacService.readMetadata(path);
+		return metadata;
 	}
 	return yield* Effect.fail(new UnsupportedFileError({ message: "File is unsupported" }));
 });
