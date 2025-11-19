@@ -1,6 +1,7 @@
 import { Effect, Stream, Chunk, Console } from "effect";
 import { DatabaseLive } from "./db";
 import { readDirectory } from "./file-parser";
+import { inArray } from "drizzle-orm";
 
 import { albumTable, artistTable, artistToAlbumTable, fileTable, songTable, songToArtistTable } from "./db/schema";
 import type { MetadataWithFilepathSchema } from "./metadata";
@@ -19,6 +20,8 @@ export const syncLibraryStream = Effect.fn("sync-library-stream")(function* (lib
 		alreadyIndexed.map((x) => x.path),
 	);
 
+	let i = 0;
+
 	yield* stream.pipe(
 		Stream.tap((x) =>
 			Console.log(
@@ -32,11 +35,17 @@ export const syncLibraryStream = Effect.fn("sync-library-stream")(function* (lib
 				colors.Reset,
 			),
 		),
+		Stream.tap(() => {
+			i++;
+			return Effect.void;
+		}),
 		Stream.grouped(10),
 		//Stream.schedule(Schedule.spaced("3 second")),
 		Stream.mapEffect(saveChunk, { concurrency: 5 }),
 		Stream.runDrain,
 	);
+
+	yield* Console.log(`Total found: ${i}`);
 });
 
 const saveChunk = Effect.fn("save-chunk")(function* (chunk: Chunk.Chunk<Metadata>) {
@@ -143,7 +152,13 @@ const createSongs = Effect.fn("create-songs")(function* (
 			id: songTable.id,
 			title: songTable.title,
 		})
-		.from(songTable);
+		.from(songTable)
+		.where(
+			inArray(
+				songTable.fileId,
+				newSongs.map((x) => x.fileId),
+			),
+		);
 });
 
 const createFiles = Effect.fn("create-files")(function* (chunk: Chunk.Chunk<Metadata>) {
@@ -164,7 +179,13 @@ const createFiles = Effect.fn("create-files")(function* (chunk: Chunk.Chunk<Meta
 			id: fileTable.id,
 			filePath: fileTable.path,
 		})
-		.from(fileTable);
+		.from(fileTable)
+		.where(
+			inArray(
+				fileTable.path,
+				newFiles.map((x) => x.path),
+			),
+		);
 });
 
 const createArtists = Effect.fn("create-artists")(function* (chunk: Chunk.Chunk<Metadata>) {
@@ -191,7 +212,8 @@ const createArtists = Effect.fn("create-artists")(function* (chunk: Chunk.Chunk<
 			id: artistTable.id,
 			name: artistTable.name,
 		})
-		.from(artistTable);
+		.from(artistTable)
+		.where(inArray(artistTable.name, newArtists));
 });
 
 const createAlbums = Effect.fn("create-albums")(function* (chunk: Chunk.Chunk<Metadata>) {
@@ -218,7 +240,8 @@ const createAlbums = Effect.fn("create-albums")(function* (chunk: Chunk.Chunk<Me
 			id: albumTable.id,
 			title: albumTable.title,
 		})
-		.from(albumTable);
+		.from(albumTable)
+		.where(inArray(albumTable.title, newAlbums));
 });
 
 function chunkToUniqueArray<T extends object, U extends string | readonly string[]>(
