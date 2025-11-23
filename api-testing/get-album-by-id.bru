@@ -5,13 +5,17 @@ meta {
 }
 
 get {
-  url: http://localhost:3003/album/:id
+  url: http://localhost:3003/album/:id?include=album-artist,song,song-artist
   body: none
   auth: inherit
 }
 
+params:query {
+  include: album-artist,song,song-artist
+}
+
 params:path {
-  id: album_01K9A4EC5XEEC03Z1X0B05KZJ7
+  id: album_01KARDKH6MBVJQJKGYRY45XPF2
 }
 
 settings {

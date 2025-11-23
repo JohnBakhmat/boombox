@@ -1,9 +1,8 @@
 import { Schema } from "effect";
 import { isValid } from "ulid";
 
-const ArtistIdSymbol = Symbol.for("ArtistId");
 const ArtistId = Schema.NonEmptyString.pipe(
-	Schema.brand(ArtistIdSymbol),
+	Schema.brand("ArtistId"),
 	Schema.startsWith("artist_"),
 	Schema.filter((str) => {
 		const [, id] = str.split("_");
@@ -18,9 +17,8 @@ const Artist = Schema.Struct({
 	identifier: "Artist",
 });
 
-const AudioFileIdSymbol = Symbol.for("AudioFileId");
 const AudioFileId = Schema.NonEmptyString.pipe(
-	Schema.brand(AudioFileIdSymbol),
+	Schema.brand("AudioFileId"),
 	Schema.startsWith("file_"),
 	Schema.filter((str) => {
 		const [, id] = str.split("_");
@@ -35,9 +33,8 @@ const AudioFile = Schema.Struct({
 	identifier: "AudioFile",
 });
 
-const SongIdSymbol = Symbol.for("SongId");
 const SongId = Schema.NonEmptyString.pipe(
-	Schema.brand(SongIdSymbol),
+	Schema.brand("SongId"),
 	Schema.startsWith("song_"),
 	Schema.filter((str) => {
 		const [, id] = str.split("_");
@@ -47,7 +44,6 @@ const SongId = Schema.NonEmptyString.pipe(
 const Song = Schema.Struct({
 	id: SongId,
 	title: Schema.NonEmptyString,
-	artists: Schema.Array(Artist),
 	// TODO: this can only positive non zero int
 	trackNumber: Schema.NullOr(Schema.Int),
 	fileId: AudioFileId,
@@ -56,9 +52,8 @@ const Song = Schema.Struct({
 	identifier: "Song",
 });
 
-const AlbumIdSymbol = Symbol.for("AlbumId");
 const AlbumId = Schema.NonEmptyString.pipe(
-	Schema.brand(AlbumIdSymbol),
+	Schema.brand("AlbumId"),
 	Schema.startsWith("album_"),
 	Schema.filter((str) => {
 		const [, id] = str.split("_");
@@ -68,8 +63,6 @@ const AlbumId = Schema.NonEmptyString.pipe(
 const Album = Schema.Struct({
 	id: AlbumId,
 	title: Schema.NonEmptyString,
-	artists: Schema.Array(Artist),
-	songs: Schema.Array(Song),
 }).annotations({
 	title: "albums",
 	identifier: "Album",
