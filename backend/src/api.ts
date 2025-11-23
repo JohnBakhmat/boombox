@@ -1,4 +1,4 @@
-import { Console, Data, Effect, Layer, ManagedRuntime, Schema } from "effect";
+import { Console, Data, Effect, Layer, ManagedRuntime, ParseResult, Schema } from "effect";
 import { Elysia, status, StatusMap, t, type HTTPHeaders } from "elysia";
 import { DatabaseLive } from "./db";
 import { BunContext } from "@effect/platform-bun";
@@ -119,85 +119,47 @@ class ApiService extends Effect.Service<ApiService>()("@boombox/backend/api/ApiS
 					),
 				);
 
-			const artistDecoder = Schema.decodeUnknown(Artist);
-
-			const artists = yield* Effect.gen(function* () {
-				const albumArtists = album.artists;
-
-				if (albumArtists && Object.hasOwn(albumArtists[0], "artist")) {
-					const decodeArtists = albumArtists?.map((relation) => {
-						const rel = relation as Extract<typeof relation, { artist: { name: string } }>;
-						const artist = rel.artist;
-
-						return artistDecoder(artist);
-					});
-
-					const artists = yield* Effect.all(decodeArtists, { concurrency: "unbounded" });
-					return artists;
-				}
-				return undefined;
-			});
-
-			const songs = yield* Effect.gen(function* () {
-				if (!album.songs) return undefined;
-
-				const decodeSongs = album.songs.map((song) =>
-					Effect.gen(function* () {
-						const artists = yield* Effect.gen(function* () {
-							if (!Object.hasOwn(song, "artists")) return undefined;
-							const songWithArtists = song as Extract<typeof song, { artists: { songId: string }[] }>;
-
-							const decodeArtists = songWithArtists.artists
-								.map((relation) => {
-									if (!Object.hasOwn(relation, "artist")) return undefined;
-
-									const { artist } = relation as Extract<
-										typeof relation,
-										{ artist: { name: string } }
-									>;
-
-									return artistDecoder(artist);
-								})
-								.filter(Boolean)
-								.map((x) => x as typeof x & {});
-
-							yield* Effect.log(decodeArtists);
-
-							return yield* Effect.all(decodeArtists);
-						});
-
-						const songDecoder = Schema.decodeUnknown(
-							Schema.Struct({
-								...Song.fields,
-								artists: Schema.optional(Schema.Array(Artist)),
-							}),
-						);
-
-						return yield* songDecoder({
-							...song,
-							artists,
-						});
-					}),
-				);
-
-				return yield* Effect.all(decodeSongs, { concurrency: "unbounded" });
-			});
-
-			const result = yield* Schema.decodeUnknown(
-				Schema.Struct({
-					...Album.fields,
-					songs: Schema.Struct({
-						...Song.fields,
-						artists: Artist.pipe(Schema.Array, Schema.optional),
+			const DatabaseSchema = Schema.Struct({
+				...Album.fields,
+				artists: Schema.Struct({
+					artist: Artist,
+				}).pipe(Schema.Array, Schema.optional),
+				songs: Schema.Struct({
+					...Song.fields,
+					artists: Schema.Struct({
+						artist: Artist,
 					}).pipe(Schema.Array, Schema.optional),
-					artists: Artist.pipe(Schema.Array, Schema.optional),
-				}),
-			)({
-				id: album.id,
-				title: album.title,
-				artists: artists,
-				songs: songs,
+				}).pipe(Schema.Array, Schema.optional),
 			});
+
+			const ResultSchema = Schema.Struct({
+				...Album.fields,
+				artists: Artist.pipe(Schema.Array, Schema.optional),
+				songs: Schema.Struct({
+					...Song.fields,
+					artists: Artist.pipe(Schema.Array, Schema.optional),
+				}).pipe(Schema.Array, Schema.optional),
+			});
+
+			const transformer = Schema.transformOrFail(DatabaseSchema, ResultSchema, {
+				strict: true,
+				decode: (input, _, ast) =>
+					ParseResult.succeed({
+						...input,
+						artists: input.artists?.map(({ artist }) => artist),
+						songs: input.songs?.map((song) => ({
+							...song,
+							artists: song.artists?.map(({ artist }) => artist),
+						})),
+					}),
+
+				encode: (x, _, ast) => ParseResult.fail(new ParseResult.Type(ast, x, "Unimplemented")),
+			});
+
+			const dbDecoder = Schema.decodeUnknown(DatabaseSchema);
+			const dbData = yield* dbDecoder(album);
+
+			const result = yield* Schema.decode(transformer)(dbData);
 
 			return result;
 		});
