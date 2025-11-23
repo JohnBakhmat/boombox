@@ -1,9 +1,10 @@
 import { BunContext, BunRuntime } from "@effect/platform-bun";
 import { Console, Duration, Effect, Layer, Stream } from "effect";
-import { DatabaseLive } from "./db";
-import { Env, EnvLive } from "./env";
-import { OtelLive } from "./otel";
-import { readDirectory, readDirectoryStream } from "./file-parser";
+import { DatabaseLive } from "../db";
+import { readDirectory } from "../file-parser";
+import { Env, EnvLive } from "~/utils/env";
+import { OtelLive } from "~/utils/otel";
+import { FlacService } from "~/flac/service";
 
 // Helpers
 function formatBytes(bytes: number): string {
@@ -42,7 +43,7 @@ function printMemorySnapshots(
 
 // ##
 
-const layers = Layer.mergeAll(BunContext.layer, EnvLive, DatabaseLive.Default);
+const layers = Layer.mergeAll(BunContext.layer, EnvLive, DatabaseLive.Default, FlacService.Default);
 
 const iteration = (i: number) =>
 	Effect.gen(function* () {
@@ -71,9 +72,7 @@ const iteration = (i: number) =>
 			peakMemory = Math.max(peakMemory, mem.heapUsed);
 		}, 50);
 
-		const task = readDirectoryStream(env.FOLDER_PATH, []).pipe(
-			Effect.flatMap((stream) => Stream.runCollect(stream)),
-		);
+		const task = readDirectory(env.FOLDER_PATH, []).pipe(Effect.flatMap((stream) => Stream.runCollect(stream)));
 
 		yield* task.pipe(
 			Effect.timed,

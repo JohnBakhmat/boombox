@@ -20,6 +20,9 @@ export const readDirectory = Effect.fn("read-directory")(function* (dirPath: str
 
 	yield* Console.log(files);
 
+	const total = files.length;
+	let progress = 0;
+
 	const stream = Stream.fromIterable(files).pipe(
 		Stream.map((file) => path.resolve(dirPath, file)),
 		Stream.filter((file) => SUPPORTED_EXTENSIONS.some((ext) => file.endsWith(ext)) === true),
@@ -28,6 +31,10 @@ export const readDirectory = Effect.fn("read-directory")(function* (dirPath: str
 			concurrency: 10,
 		}),
 		Stream.tap(Console.log),
+		Stream.tap(() => {
+			progress++;
+			return Console.log((progress / total) * 100, "%");
+		}),
 		Stream.catchAll((err) => Stream.empty),
 	);
 
@@ -52,4 +59,3 @@ export const parseFile = Effect.fn("parse-file")(function* (path: string) {
 	}
 	return yield* Effect.fail(new UnsupportedFileError({ message: "File is unsupported" }));
 });
-
