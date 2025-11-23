@@ -35,7 +35,7 @@ export const readDirectory = Effect.fn("read-directory")(function* (dirPath: str
 			progress++;
 			return Console.log((progress / total) * 100, "%");
 		}),
-		Stream.catchAll((err) => Stream.empty),
+		//Stream.catchAll((err) => Stream.empty),
 	);
 
 	return stream;
