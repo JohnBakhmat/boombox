@@ -1,6 +1,8 @@
 import { expect, it } from "@effect/vitest";
 import { Effect, Exit } from "effect";
-import { CoverartService, MusicbrainzCoverartLayer } from "../src/cover-art";
+import { CoverartService } from "../src/cover-art";
+
+const layer = CoverartService.layer;
 
 it.effect("should fetch cover art if release group is correct", () =>
 	Effect.gen(function* () {
@@ -11,7 +13,7 @@ it.effect("should fetch cover art if release group is correct", () =>
 			.pipe(Effect.exit);
 
 		expect(Exit.isSuccess(result)).toBeTruthy();
-	}).pipe(Effect.provide(MusicbrainzCoverartLayer)),
+	}).pipe(Effect.provide(layer)),
 );
 
 it.effect("should return InvalidReleaseGroupId if id is invalid", () =>
@@ -23,5 +25,5 @@ it.effect("should return InvalidReleaseGroupId if id is invalid", () =>
 		const result = yield* coverartService.fetchFrontByReleaseGroupId(rgId).pipe(Effect.exit);
 
 		expect(Exit.isFailure(result)).toBeTruthy();
-	}).pipe(Effect.provide(MusicbrainzCoverartLayer)),
+	}).pipe(Effect.provide(layer)),
 );
