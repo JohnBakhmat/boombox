@@ -41,11 +41,14 @@ const SongId = Schema.NonEmptyString.pipe(
 		return isValid(id as string) ? true : `Extpected SongID to end with valid ulid but recieved (${id})`;
 	}),
 );
+
+const TrackNumber = Schema.Int.pipe(Schema.between(0, 200), Schema.NullOr);
+
 const Song = Schema.Struct({
 	id: SongId,
 	title: Schema.NonEmptyString,
 	// TODO: this can only positive non zero int
-	trackNumber: Schema.NullOr(Schema.Int),
+	trackNumber: TrackNumber,
 	fileId: AudioFileId,
 }).annotations({
 	title: "songs",
