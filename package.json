@@ -10,5 +10,8 @@
     "dev": "bun --filter '*' dev",
     "db:migrate": "bun --filter @boombox/backend db:migrate",
     "db:gen": "bun --filter @boombox/backend db:gen"
+  },
+  "devDependencies": {
+    "oxfmt": "^0.16.0"
   }
 }

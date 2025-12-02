@@ -17,12 +17,12 @@ function RouteComponent() {
 	});
 
 	return (
-			<div className="container">
-				<div className="grid lg:grid-cols-6 grid-cols-1">
-					{albums?.map((album) => (
-						<AlbumCard album={album} key={album.id} />
-					))}
-		</div>
+		<div className="container">
+			<div className="grid lg:grid-cols-6 grid-cols-1">
+				{albums?.map((album) => (
+					<AlbumCard album={album} key={album.id} />
+				))}
+			</div>
 		</div>
 	);
 }

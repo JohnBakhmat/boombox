@@ -99,7 +99,11 @@ export const MetadataFromUint8Array = Schema.transformOrFail(MetadataInput, Meta
 			// Validate number of fields to prevent DoS
 			if (numberOfFields > MAX_VORBIS_FIELDS) {
 				return yield* ParseResult.fail(
-					new ParseResult.Type(ast, uint8Array, `Too many fields: ${numberOfFields} (max ${MAX_VORBIS_FIELDS})`),
+					new ParseResult.Type(
+						ast,
+						uint8Array,
+						`Too many fields: ${numberOfFields} (max ${MAX_VORBIS_FIELDS})`,
+					),
 				);
 			}
 
@@ -111,7 +115,11 @@ export const MetadataFromUint8Array = Schema.transformOrFail(MetadataInput, Meta
 				// Bounds check: ensure we can read field length
 				if (cursor + 4 > length) {
 					return yield* ParseResult.fail(
-						new ParseResult.Type(ast, uint8Array, `Buffer too short to read field ${i} length at cursor ${cursor}`),
+						new ParseResult.Type(
+							ast,
+							uint8Array,
+							`Buffer too short to read field ${i} length at cursor ${cursor}`,
+						),
 					);
 				}
 
